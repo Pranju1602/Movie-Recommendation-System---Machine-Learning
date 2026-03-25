@@ -14,12 +14,63 @@
             <a href="{{ url_for('main.home') }}" class="btn btn-primary auth-btn" style="display: inline-block; text-decoration: none; margin-top: 25px;">Discover Movies</a>
         </div>
     {% else %}
+        <!-- Stats Bar -->
+        {% set watched_list = [] %}
+        {% set pending_list = [] %}
+        {% for m in movies %}
+            {% if m.watched %}
+                {% if watched_list.append(m) %}{% endif %}
+            {% else %}
+                {% if pending_list.append(m) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% set watched_count = watched_list | length %}
+        {% set total_count = movies | length %}
+        {% set pending_count = pending_list | length %}
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; padding: 0 4%;">
+            <div style="flex: 1; min-width: 150px; background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.2); padding: 18px 20px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: #69f0ae;">{{ watched_count }}</div>
+                <div style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">🟢 Watched</div>
+            </div>
+            <div style="flex: 1; min-width: 150px; background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.2); padding: 18px 20px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: #ffd54f;">{{ pending_count }}</div>
+                <div style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">🟡 Pending</div>
+            </div>
+            <div style="flex: 1; min-width: 150px; background: rgba(229,9,20,0.1); border: 1px solid rgba(229,9,20,0.2); padding: 18px 20px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: 800; color: white;">{{ total_count }}</div>
+                <div style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">🎬 Total</div>
+            </div>
+            <div style="flex: 1; min-width: 150px; background: rgba(33,150,243,0.1); border: 1px solid rgba(33,150,243,0.2); padding: 18px 20px; border-radius: 12px; text-align: center;">
+                {% if total_count > 0 %}
+                <div style="font-size: 2rem; font-weight: 800; color: #42a5f5;">{{ ((watched_count / total_count) * 100) | round(0) | int }}%</div>
+                {% else %}
+                <div style="font-size: 2rem; font-weight: 800; color: #42a5f5;">0%</div>
+                {% endif %}
+                <div style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">📈 Completion</div>
+            </div>
+        </div>
+
         <div class="row-posters" style="flex-wrap: wrap; justify-content: flex-start; gap: 20px; padding: 10px 4%;">
             {% for movie in movies %}
             <div class="movie-card" id="card-{{ movie.id }}" style="width: 200px; text-align: center; position: relative; transition: transform 0.3s; cursor: pointer;">
+                <!-- Watch Status Badge -->
+                {% if movie.watched %}
+                <div id="badge-{{ movie.id }}" style="position: absolute; top: 10px; left: 10px; z-index: 5; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; backdrop-filter: blur(5px); background: rgba(76,175,80,0.85); color: white;">
+                    🟢 Watched
+                </div>
+                {% else %}
+                <div id="badge-{{ movie.id }}" style="position: absolute; top: 10px; left: 10px; z-index: 5; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; backdrop-filter: blur(5px); background: rgba(255,193,7,0.85); color: #111;">
+                    🟡 Unwatched
+                </div>
+                {% endif %}
+
                 <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" style="text-decoration: none; color: inherit; display: block;">
                     {% if movie.poster_url %}
+                    {% if movie.watched %}
+                    <img src="{{ movie.poster_url }}" class="poster" alt="{{ movie.title }}" style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); border: 2px solid rgba(76,175,80,0.5);">
+                    {% else %}
                     <img src="{{ movie.poster_url }}" class="poster" alt="{{ movie.title }}" style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);">
+                    {% endif %}
                     {% else %}
                     <div class="poster" style="width: 100%; height: 300px; background: #222; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);">No Poster</div>
                     {% endif %}
@@ -27,16 +78,52 @@
                     <div style="color: #f5c518; font-weight: bold; font-size: 0.9rem; margin-top: 4px;"><i class="fas fa-star"></i> {{ movie.rating }}</div>
                 </a>
                 
-                <button onclick="removeFromWatchlist(this)" data-movie-id="{{ movie.id }}" data-movie-title="{{ movie.title }}" class="btn btn-secondary" style="width: 100%; margin-top: 12px; padding: 8px; font-size: 0.85rem; border: 1px solid #444; background: transparent; color: #aaa;">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 6px; margin-top: 12px;">
+                    {% if movie.watched %}
+                    <button onclick="toggleWatchStatus(this, false)" data-movie-id="{{ movie.id }}" class="wl-btn" style="flex: 1; padding: 8px; font-size: 0.8rem; border: 1px solid rgba(255,193,7,0.3); background: rgba(255,193,7,0.1); color: #ffd54f; border-radius: 6px; cursor: pointer; transition: all 0.3s;">
+                        <i class="fas fa-undo"></i> Unwatch
+                    </button>
+                    {% else %}
+                    <button onclick="toggleWatchStatus(this, true)" data-movie-id="{{ movie.id }}" class="wl-btn" style="flex: 1; padding: 8px; font-size: 0.8rem; border: 1px solid rgba(76,175,80,0.3); background: rgba(76,175,80,0.1); color: #69f0ae; border-radius: 6px; cursor: pointer; transition: all 0.3s;">
+                        <i class="fas fa-check"></i> Watched
+                    </button>
+                    {% endif %}
+                    <button onclick="removeFromWatchlist(this)" data-movie-id="{{ movie.id }}" data-movie-title="{{ movie.title }}" class="wl-btn" style="padding: 8px 10px; font-size: 0.8rem; border: 1px solid rgba(229,9,20,0.3); background: rgba(229,9,20,0.1); color: #ef5350; border-radius: 6px; cursor: pointer; transition: all 0.3s;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
             {% endfor %}
         </div>
     {% endif %}
 </div>
 
+<style>
+.wl-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.2);
+}
+</style>
+
 <script>
+function toggleWatchStatus(btnElem, watched) {
+    const movieId = btnElem.getAttribute('data-movie-id');
+    
+    fetch('/api/watchlist/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movie_id: parseInt(movieId), watched: watched })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Smooth reload to reflect updated state
+            window.location.reload();
+        }
+    });
+}
+
 function removeFromWatchlist(btnElem) {
     const movieId = btnElem.getAttribute('data-movie-id');
     const movieTitle = btnElem.getAttribute('data-movie-title');
@@ -44,9 +131,7 @@ function removeFromWatchlist(btnElem) {
     if(confirm(`Are you sure you want to remove ${movieTitle} from your watchlist?`)) {
         fetch('/api/watchlist/toggle', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ movie_id: movieId, movie_title: movieTitle })
         })
         .then(res => res.json())
@@ -58,7 +143,6 @@ function removeFromWatchlist(btnElem) {
                 card.style.transform = 'scale(0.9)';
                 setTimeout(() => {
                     card.remove();
-                    // Reload if empty
                     if(document.querySelectorAll('.movie-card').length === 0) {
                         window.location.reload();
                     }

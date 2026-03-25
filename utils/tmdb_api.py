@@ -81,12 +81,18 @@ def get_full_movie_details(movie_id):
             # Format some useful variables
             data['poster_url'] = f"https://image.tmdb.org/t/p/w500{data.get('poster_path')}" if data.get('poster_path') else None
             data['backdrop_url'] = f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}" if data.get('backdrop_path') else None
+            data['rating'] = round(data.get('vote_average', 0), 1)
             
             # Formatting financial and extra metadata
             data['budget_formatted'] = f"${data.get('budget'):,}" if data.get('budget') else "Unknown"
             data['revenue_formatted'] = f"${data.get('revenue'):,}" if data.get('revenue') else "Unknown"
+            data['runtime_formatted'] = f"{data.get('runtime')} mins" if data.get('runtime') else "Unknown"
             companies = data.get('production_companies', [])
             data['production'] = ", ".join([c['name'] for c in companies[:3]]) if companies else "Unknown"
+            data['genres_formatted'] = ", ".join([g['name'] for g in data.get('genres', [])]) if data.get('genres') else "Unknown"
+            data['release_date_formatted'] = data.get('release_date', 'Unknown')
+            data['popularity_formatted'] = f"{data.get('popularity', 0):.0f}"
+            data['language_formatted'] = data.get('original_language', 'N/A').upper()
             
             # Get Youtube Trailer
             data['trailer_key'] = None
@@ -142,4 +148,44 @@ def get_trending_movies():
             return trending
     except Exception as e:
         print(f"Error fetching trending movies: {e}")
+    return []
+
+def get_movies_by_mood(mood):
+    """Maps user mood to TMDB genre IDs and fetches popular matching movies."""
+    mood_map = {
+        'happy': '35|16|10751',     # Comedy, Animation, Family
+        'sad': '18|10749',          # Drama, Romance
+        'scared': '27|53',          # Horror, Thriller
+        'excited': '28|12|878',     # Action, Adventure, Sci-Fi
+        'romantic': '10749',        # Romance
+        'mysterious': '9648|80'     # Mystery, Crime
+    }
+    
+    genres = mood_map.get(mood.lower())
+    if not genres:
+        return []
+        
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+        
+    url = f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}&with_genres={genres}&sort_by=popularity.desc&page=1"
+    
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            results = response.json().get('results', [])
+            
+            movies = []
+            for movie in results[:10]:  # Return top 10 mood matches
+                if movie.get('poster_path'):
+                    movies.append({
+                        'id': movie['id'],
+                        'title': movie.get('title') or movie.get('original_title') or "Unknown Title",
+                        'poster_path': f"https://image.tmdb.org/t/p/w500{movie['poster_path']}",
+                        'rating': round(movie.get('vote_average', 0), 1)
+                    })
+            return movies
+    except Exception as e:
+        print(f"Error fetching mood movies: {e}")
     return []

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 100px auto 40px; padding: 0 4%;">
+    <div style="text-align: center; margin-bottom: 40px;">
+        <h2 style="font-size: 2.5rem; display: flex; align-items: center; justify-content: center; gap: 15px;">
+            <i class="fas fa-balance-scale" style="color: var(--brand-red);"></i> Movie Showdown
+        </h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 10px;">Compare ratings, revenue, runtime, and cast side-by-side!</p>
+    </div>
+
+    <!-- Search Form -->
+    <div style="background: rgba(20,20,20,0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <form method="POST" action="{{ url_for('main.compare_movies') }}" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: center;">
+            <div style="flex: 1; min-width: 300px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-weight: bold;">Movie 1 (Challenger)</label>
+                <input type="text" name="movie1" class="auth-input" style="width: 100%; border-left: 4px solid var(--brand-red);" placeholder="E.g. Pathaan" value="{{ q1 }}" required>
+            </div>
+            
+            <div style="font-size: 2.5rem; font-weight: 900; color: var(--brand-red); font-style: italic; align-self: flex-end; padding-bottom: 6px;">VS</div>
+            
+            <div style="flex: 1; min-width: 300px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-weight: bold;">Movie 2 (Champion)</label>
+                <input type="text" name="movie2" class="auth-input" style="width: 100%; border-left: 4px solid var(--brand-red);" placeholder="E.g. War" value="{{ q2 }}" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary auth-btn" style="margin-top: 26px; height: 55px; padding: 0 35px; border-radius: 6px; font-size: 1.2rem;"><i class="fas fa-bolt"></i> Fight!</button>
+        </form>
+        {% if error %}
+            <div class="alert alert-danger" style="margin-top: 20px; position: static; transform: none; width: 100%;">{{ error }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Results Area -->
+    {% if m1 and m2 %}
+    <div style="display: flex; gap: 30px; margin-top: 40px; flex-wrap: wrap; align-items: stretch;">
+        <!-- Card 1 -->
+        <div class="movie-compare-card" style="display: flex; flex-direction: column; flex: 1; min-width: 350px; background: rgba(15,15,15,0.9); border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+            <div style="height: 250px; background: url('{{ m1.backdrop_url }}') center/cover;">
+                <div style="width: 100%; height: 100%; background: linear-gradient(to top, rgba(15,15,15,1), rgba(15,15,15,0)); display: flex; align-items: flex-end; padding: 20px;">
+                    <h3 style="font-size: 2.2rem; text-shadow: 0 4px 10px rgba(0,0,0,0.8);">{{ m1.title }}</h3>
+                </div>
+            </div>
+            <div style="flex-grow: 1; padding: 30px; display: flex; flex-direction: column;">
+                <div class="compare-stat">
+                    <span><i class="fas fa-star" style="color: #f5c518; width: 25px;"></i> Rating</span>
+                    <strong style="font-size: 1.2rem;" class="{% if m1.get('vote_average', 0) > m2.get('vote_average', 0) %}stat-winner{% endif %}">{{ m1.get('vote_average', 0)|round(1) }} / 10</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-chart-line" style="color: #e91e63; width: 25px;"></i> Popularity</span>
+                    <strong class="{% if m1.get('popularity', 0) > m2.get('popularity', 0) %}stat-winner{% endif %}">{{ m1.popularity_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-sack-dollar" style="color: #4caf50; width: 25px;"></i> Box Office</span>
+                    <strong class="{% if m1.get('revenue', 0) > m2.get('revenue', 0) %}stat-winner{% endif %}">{{ m1.get('revenue_formatted', 'Unknown') }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-money-bill-wave" style="color: #ff9800; width: 25px;"></i> Budget</span>
+                    <strong>{{ m1.budget_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-calendar-alt" style="color: #03a9f4; width: 25px;"></i> Release Date</span>
+                    <strong>{{ m1.release_date_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-clock" style="color: #00bcd4; width: 25px;"></i> Runtime</span>
+                    <strong>{{ m1.runtime_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-globe" style="color: #8bc34a; width: 25px;"></i> Language</span>
+                    <strong>{{ m1.language_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-masks-theater" style="color: #9c27b0; width: 25px;"></i> Genres</span>
+                    <strong style="text-align: right; max-width: 55%;">{{ m1.genres_formatted }}</strong>
+                </div>
+                <div class="compare-stat" style="border-bottom: none; margin-bottom: 20px;">
+                    <span><i class="fas fa-bullhorn" style="color: #ff5722; width: 25px;"></i> Director</span>
+                    <strong style="text-align: right;">{{ m1.director }}</strong>
+                </div>
+                
+                <a href="{{ url_for('main.movie_detail', movie_id=m1.id) }}" class="btn btn-primary" style="margin-top: auto; display: block; text-align: center; font-weight: bold; font-size: 1.1rem; padding: 14px; border-radius: 8px; box-shadow: 0 4px 8px rgba(229, 9, 20, 0.15);">View {{ m1.title }} Details</a>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="movie-compare-card" style="display: flex; flex-direction: column; flex: 1; min-width: 350px; background: rgba(15,15,15,0.9); border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+            <div style="height: 250px; background: url('{{ m2.backdrop_url }}') center/cover;">
+                <div style="width: 100%; height: 100%; background: linear-gradient(to top, rgba(15,15,15,1), rgba(15,15,15,0)); display: flex; align-items: flex-end; padding: 20px;">
+                    <h3 style="font-size: 2.2rem; text-shadow: 0 4px 10px rgba(0,0,0,0.8);">{{ m2.title }}</h3>
+                </div>
+            </div>
+            <div style="flex-grow: 1; padding: 30px; display: flex; flex-direction: column;">
+                <div class="compare-stat">
+                    <span><i class="fas fa-star" style="color: #f5c518; width: 25px;"></i> Rating</span>
+                    <strong style="font-size: 1.2rem;" class="{% if m2.get('vote_average', 0) > m1.get('vote_average', 0) %}stat-winner{% endif %}">{{ m2.get('vote_average', 0)|round(1) }} / 10</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-chart-line" style="color: #e91e63; width: 25px;"></i> Popularity</span>
+                    <strong class="{% if m2.get('popularity', 0) > m1.get('popularity', 0) %}stat-winner{% endif %}">{{ m2.popularity_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-sack-dollar" style="color: #4caf50; width: 25px;"></i> Box Office</span>
+                    <strong class="{% if m2.get('revenue', 0) > m1.get('revenue', 0) %}stat-winner{% endif %}">{{ m2.get('revenue_formatted', 'Unknown') }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-money-bill-wave" style="color: #ff9800; width: 25px;"></i> Budget</span>
+                    <strong>{{ m2.budget_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-calendar-alt" style="color: #03a9f4; width: 25px;"></i> Release Date</span>
+                    <strong>{{ m2.release_date_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-clock" style="color: #00bcd4; width: 25px;"></i> Runtime</span>
+                    <strong>{{ m2.runtime_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-globe" style="color: #8bc34a; width: 25px;"></i> Language</span>
+                    <strong>{{ m2.language_formatted }}</strong>
+                </div>
+                <div class="compare-stat">
+                    <span><i class="fas fa-masks-theater" style="color: #9c27b0; width: 25px;"></i> Genres</span>
+                    <strong style="text-align: right; max-width: 55%;">{{ m2.genres_formatted }}</strong>
+                </div>
+                <div class="compare-stat" style="border-bottom: none; margin-bottom: 20px;">
+                    <span><i class="fas fa-bullhorn" style="color: #ff5722; width: 25px;"></i> Director</span>
+                    <strong style="text-align: right;">{{ m2.director }}</strong>
+                </div>
+
+                <a href="{{ url_for('main.movie_detail', movie_id=m2.id) }}" class="btn btn-primary" style="margin-top: auto; display: block; text-align: center; font-weight: bold; font-size: 1.1rem; padding: 14px; border-radius: 8px; box-shadow: 0 4px 8px rgba(229, 9, 20, 0.15);">View {{ m2.title }} Details</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.compare-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 1.05rem;
+}
+.compare-stat span {
+    color: var(--text-muted);
+}
+.stat-winner {
+    color: #69f0ae;
+    text-shadow: 0 0 12px rgba(105, 240, 174, 0.4);
+    font-weight: 700;
+}
+.movie-compare-card {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+.movie-compare-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(229, 9, 20, 0.4) !important;
+    box-shadow: 0 20px 50px rgba(229, 9, 20, 0.3) !important;
+}
+</style>
+{% endblock %}

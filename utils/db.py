@@ -37,11 +37,19 @@ def init_db():
                 user_id INT,
                 movie_id INT,
                 movie_title VARCHAR(255),
+                watched BOOLEAN DEFAULT FALSE,
                 added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 UNIQUE KEY unique_user_movie (user_id, movie_id)
             )
         """)
+        
+        # Add watched column if table already exists without it
+        try:
+            cursor.execute("ALTER TABLE watchlist ADD COLUMN watched BOOLEAN DEFAULT FALSE")
+            conn.commit()
+        except:
+            pass
         
         # Create Ratings table
         cursor.execute("""

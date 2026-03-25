@@ -26,6 +26,7 @@ def login_required(f):
 def home():
     recommendations = []
     search_query = request.args.get('q', '')
+    mood_query = request.args.get('mood', '')
     error = None
     
     if search_query:
@@ -34,10 +35,17 @@ def home():
             error = result["error"]
         else:
             recommendations = result.get("recommendations", [])
+    elif mood_query:
+        from utils.ml_engine import get_ml_mood_recommendations
+        result = get_ml_mood_recommendations(mood_query)
+        if "error" in result:
+            error = result["error"]
+        else:
+            recommendations = result.get("recommendations", [])
             
     trending_movies = get_trending_movies()
                 
-    return render_template('index.html', recommendations=recommendations, trending_movies=trending_movies, search_query=search_query, error=error)
+    return render_template('index.html', recommendations=recommendations, trending_movies=trending_movies, search_query=search_query, current_mood=mood_query, error=error)
 
 @main_bp.route('/movie/<int:movie_id>')
 @login_required
@@ -119,10 +127,9 @@ def watchlist():
     
     if conn:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT movie_id, movie_title FROM watchlist WHERE user_id = %s ORDER BY added_at DESC", (user_id,))
+        cursor.execute("SELECT movie_id, movie_title, watched FROM watchlist WHERE user_id = %s ORDER BY added_at DESC", (user_id,))
         watchlist_items = cursor.fetchall()
         
-        # We need fetching basic details like poster for the UI grid.
         for item in watchlist_items:
             details = get_full_movie_details(item['movie_id'])
             if details:
@@ -130,7 +137,8 @@ def watchlist():
                     'id': item['movie_id'],
                     'title': item['movie_title'],
                     'poster_url': details.get('poster_url'),
-                    'rating': round(details.get('vote_average', 0), 1)
+                    'rating': round(details.get('vote_average', 0), 1),
+                    'watched': bool(item['watched'])
                 })
         cursor.close()
         conn.close()
@@ -206,6 +214,34 @@ def toggle_watchlist():
         cursor.close()
         conn.close()
 
+@main_bp.route('/api/watchlist/status', methods=['POST'])
+@login_required
+def toggle_watch_status():
+    data = request.json
+    movie_id = data.get('movie_id')
+    watched = data.get('watched')  # True or False
+    user_id = session['user_id']
+    
+    if movie_id is None or watched is None:
+        return jsonify({"success": False, "error": "Missing data"}), 400
+        
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "DB Error"}), 500
+        
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE watchlist SET watched = %s WHERE user_id = %s AND movie_id = %s", 
+                       (watched, user_id, movie_id))
+        conn.commit()
+        return jsonify({"success": True, "watched": watched})
+    except Exception as e:
+        print(f"Watch Status Error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 @main_bp.route('/api/ratings/rate', methods=['POST'])
 @login_required
 def rate_movie():
@@ -263,6 +299,38 @@ def delete_rating():
     finally:
         cursor.close()
         conn.close()
+
+@main_bp.route('/compare', methods=['GET', 'POST'])
+@login_required
+def compare_movies():
+    movie1_data = None
+    movie2_data = None
+    query1 = ''
+    query2 = ''
+    error = None
+
+    if request.method == 'POST':
+        query1 = request.form.get('movie1', '').strip()
+        query2 = request.form.get('movie2', '').strip()
+        
+        if query1 and query2:
+            from utils.tmdb_api import search_tmdb_movie, get_full_movie_details
+            
+            m1_search = search_tmdb_movie(query1)
+            m2_search = search_tmdb_movie(query2)
+            
+            if m1_search and m2_search:
+                movie1_data = get_full_movie_details(m1_search['id'])
+                movie2_data = get_full_movie_details(m2_search['id'])
+            else:
+                if not m1_search:
+                    error = f"Could not find a match for '{query1}'"
+                if not m2_search:
+                    error = f"Could not find a match for '{query2}'"
+        else:
+            error = "Please enter both movies to compare."
+            
+    return render_template('compare.html', m1=movie1_data, m2=movie2_data, q1=query1, q2=query2, error=error)
 
 @main_bp.route('/api/chat', methods=['POST'])
 def chat():

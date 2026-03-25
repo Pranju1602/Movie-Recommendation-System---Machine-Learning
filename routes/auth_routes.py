@@ -7,6 +7,7 @@ import sys
 # Add parent directory to path to allow absolute imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.db import get_db_connection
+from utils.tmdb_api import get_full_movie_details
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -74,7 +75,7 @@ def profile():
     user_id = session['user_id']
     conn = get_db_connection()
     user_data = {}
-    stats = {'watchlist_count': 0, 'ratings_count': 0, 'reviews_count': 0}
+    stats = {'watchlist_count': 0, 'ratings_count': 0, 'reviews_count': 0, 'watched_count': 0, 'pending_count': 0, 'completion_rate': 0, 'rating_distribution': [0,0,0,0,0], 'genre_labels': [], 'genre_values': []}
     
     if request.method == 'POST':
         new_username = request.form.get('username')
@@ -110,11 +111,60 @@ def profile():
         cursor.execute("SELECT COUNT(*) as c FROM watchlist WHERE user_id = %s", (user_id,))
         stats['watchlist_count'] = cursor.fetchone()['c']
         
+        cursor.execute("SELECT COUNT(*) as c FROM watchlist WHERE user_id = %s AND watched = TRUE", (user_id,))
+        stats['watched_count'] = cursor.fetchone()['c']
+        
+        stats['pending_count'] = stats['watchlist_count'] - stats['watched_count']
+        stats['completion_rate'] = round((stats['watched_count'] / stats['watchlist_count']) * 100) if stats['watchlist_count'] > 0 else 0
+        
         cursor.execute("SELECT COUNT(*) as c FROM ratings WHERE user_id = %s", (user_id,))
         stats['ratings_count'] = cursor.fetchone()['c']
         
         cursor.execute("SELECT COUNT(*) as c FROM reviews WHERE user_id = %s", (user_id,))
         stats['reviews_count'] = cursor.fetchone()['c']
+        
+        # Aggregate Rating Distribution Array mapping natively to 1-5 scales
+        cursor.execute("SELECT rating_value, COUNT(*) as count FROM ratings WHERE user_id = %s GROUP BY rating_value", (user_id,))
+        rating_dist_raw = cursor.fetchall()
+        
+        rating_dist = {1:0, 2:0, 3:0, 4:0, 5:0}
+        for r in rating_dist_raw:
+            val = round(r['rating_value'])
+            if val in rating_dist:
+                rating_dist[val] += r['count']
+                
+        stats['rating_distribution'] = list(rating_dist.values())
+        
+        # Genre Preference Analysis - aggregate genres from all rated movies
+        cursor.execute("SELECT movie_id FROM ratings WHERE user_id = %s", (user_id,))
+        rated_movie_ids = [row['movie_id'] for row in cursor.fetchall()]
+        
+        # Also include watched movies from watchlist
+        cursor.execute("SELECT movie_id FROM watchlist WHERE user_id = %s AND watched = TRUE", (user_id,))
+        watched_movie_ids = [row['movie_id'] for row in cursor.fetchall()]
+        
+        all_movie_ids = list(set(rated_movie_ids + watched_movie_ids))
+        print(f"[Genre Analysis] User {user_id} - Found {len(rated_movie_ids)} rated, {len(watched_movie_ids)} watched, {len(all_movie_ids)} unique movie IDs")
+        
+        genre_counts = {}
+        for mid in all_movie_ids[:20]:
+            try:
+                details = get_full_movie_details(mid)
+                if details and details.get('genres'):
+                    for genre in details['genres']:
+                        name = genre['name']
+                        genre_counts[name] = genre_counts.get(name, 0) + 1
+                else:
+                    print(f"[Genre Analysis] No genre data for movie ID {mid}")
+            except Exception as e:
+                print(f"[Genre Analysis] Error fetching movie {mid}: {e}")
+        
+        print(f"[Genre Analysis] Final genre_counts: {genre_counts}")
+        
+        # Sort by count descending, take top 8
+        sorted_genres = sorted(genre_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+        stats['genre_labels'] = [g[0] for g in sorted_genres]
+        stats['genre_values'] = [g[1] for g in sorted_genres]
         
         cursor.close()
         conn.close()

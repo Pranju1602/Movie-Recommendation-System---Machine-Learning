@@ -4,177 +4,302 @@
 
 {% block content %}
 <style>
-.stat-card {
-    flex: 1; 
-    min-width: 150px; 
-    background: rgba(30,30,30,0.6); 
-    border: 1px solid rgba(255,255,255,0.05); 
-    padding: 30px 20px; 
-    border-radius: 15px; 
-    text-align: center; 
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
-    position: relative;
-    overflow: hidden;
+.profile-page { max-width: 1100px; margin: 100px auto 60px; padding: 0 4%; }
+
+/* Stat Mini Cards */
+.stat-mini { 
+    flex: 1; min-width: 100px; text-align: center; padding: 20px 10px;
+    background: rgba(25,25,25,0.7); border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 12px; transition: transform 0.3s ease, border-color 0.3s ease;
 }
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    opacity: 0;
-    transition: opacity 0.4s ease;
+.stat-mini:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.12); }
+.stat-mini .stat-icon { font-size: 1.4rem; margin-bottom: 10px; display: block; }
+.stat-mini .stat-val { font-size: 1.8rem; font-weight: 800; color: white; }
+.stat-mini .stat-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px; }
+
+/* Section Title */
+.sec-title {
+    font-size: 1.2rem; margin-bottom: 20px; color: #fff;
+    padding-left: 12px; border-left: 3px solid var(--brand-red);
+    display: flex; align-items: center; font-weight: 700;
 }
-.stat-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-    border-color: rgba(255,255,255,0.15);
-    background: rgba(35,35,35,0.8);
+.sec-title i { margin-right: 10px; color: #666; font-size: 1rem; }
+
+/* Card containers */
+.dash-card {
+    background: rgba(18,18,18,0.85); border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px; padding: 30px; box-shadow: 0 8px 25px rgba(0,0,0,0.25);
 }
-.stat-card:hover::before {
-    opacity: 1;
+.chart-box {
+    background: rgba(8,8,8,0.6); border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 10px; padding: 20px;
 }
-.stat-card-icon {
-    font-size: 2.5rem; 
-    margin-bottom: 20px;
-    display: inline-block;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.chart-label {
+    text-align: center; color: #999; margin-bottom: 18px;
+    font-weight: 600; letter-spacing: 1.2px; font-size: 0.8rem;
 }
-.stat-card:hover .stat-card-icon {
-    transform: scale(1.15) rotate(-5deg);
+
+/* Profile form */
+.pf-label { display: block; color: #777; margin-bottom: 6px; font-size: 0.85rem; font-weight: 500; }
+.pf-input {
+    width: 100%; padding: 12px 16px; font-size: 1rem;
+    background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; color: white; transition: border-color 0.3s, box-shadow 0.3s;
 }
-.stat-card-value {
-    font-size: 2.8rem; 
-    margin: 0; 
-    color: white;
-    font-weight: 800;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-}
-.stat-card-label {
-    color: #999; 
-    font-size: 0.9rem; 
-    margin-top: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 500;
-}
-.profile-input-group label {
-    display: block; 
-    color: #aaa; 
-    margin-bottom: 8px; 
-    font-size: 0.95rem;
-    font-weight: 500;
-}
-.profile-input-group input {
-    width: 100%; 
-    padding: 14px 18px; 
-    font-size: 1.05rem;
-    background: rgba(0,0,0,0.3) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 8px;
-    color: white;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-.profile-input-group input:focus {
-    border-color: var(--brand-red) !important;
-    box-shadow: 0 0 0 3px rgba(229,9,20,0.2) !important;
-    outline: none;
-}
+.pf-input:focus { border-color: var(--brand-red); box-shadow: 0 0 0 3px rgba(229,9,20,0.15); outline: none; }
 </style>
 
-<div style="max-width: 1000px; margin: 120px auto 60px auto; padding: 0 4%;">
-    
-    <!-- Profile Header Cover -->
-    <div style="background: linear-gradient(to bottom, rgba(229,9,20,0.1) 0%, rgba(20,20,20,0.8) 100%); padding: 40px; border-radius: 20px; margin-bottom: 40px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 20px;">
+<div class="profile-page">
+
+    <!-- ════════ HEADER ════════ -->
+    <div style="background: linear-gradient(135deg, rgba(229,9,20,0.08) 0%, rgba(10,10,10,0.9) 100%); padding: 35px 40px; border-radius: 20px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; align-items: center; gap: 25px; flex-wrap: wrap;">
             {% set initial = user.username[0]|upper %}
-            <div style="width: 110px; height: 110px; background: linear-gradient(135deg, #e50914, #8b0000); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: bold; color: white; box-shadow: 0 5px 20px rgba(229,9,20,0.5);">
+            <div style="width: 90px; height: 90px; background: linear-gradient(135deg, #e50914, #8b0000); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; color: white; box-shadow: 0 4px 20px rgba(229,9,20,0.4); flex-shrink: 0;">
                 {{ initial }}
             </div>
-            <div style="flex: 1; min-width: 250px;">
-                <h1 style="font-size: 2.8rem; margin: 0; color: white; letter-spacing: 1px; font-weight: 800;">{{ user.username }}</h1>
-                <p style="color: #ccc; margin: 8px 0 0 0; font-size: 1.1rem;"><i class="fas fa-envelope" style="margin-right:8px; color: #888;"></i>{{ user.email }}</p>
-                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <span style="padding: 6px 15px; border-radius: 20px; background: rgba(255,255,255,0.08); font-size: 0.85rem; color: #ddd; border: 1px solid rgba(255,255,255,0.1);">
-                        <i class="fas fa-calendar-alt" style="margin-right: 6px; color: #aaa;"></i> Member since {{ user.member_since }}
+            <div style="flex: 1; min-width: 200px;">
+                <h1 style="font-size: 2.2rem; margin: 0; color: white; font-weight: 800;">{{ user.username }}</h1>
+                <p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.95rem;"><i class="fas fa-envelope" style="margin-right: 6px; color: #666;"></i>{{ user.email }}</p>
+                <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span style="padding: 4px 12px; border-radius: 15px; background: rgba(255,255,255,0.06); font-size: 0.78rem; color: #bbb; border: 1px solid rgba(255,255,255,0.08);">
+                        <i class="fas fa-calendar-alt" style="margin-right: 5px; color: #777;"></i>Since {{ user.member_since }}
                     </span>
-                    <span style="padding: 6px 15px; border-radius: 20px; background: rgba(76, 175, 80, 0.1); font-size: 0.85rem; color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.2);">
-                        <i class="fas fa-shield-alt" style="margin-right: 6px;"></i> Verified Account
+                    <span style="padding: 4px 12px; border-radius: 15px; background: rgba(76,175,80,0.08); font-size: 0.78rem; color: #66bb6a; border: 1px solid rgba(76,175,80,0.15);">
+                        <i class="fas fa-shield-alt" style="margin-right: 5px;"></i>Verified
                     </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Account Activity / CineStats -->
-    <div style="margin-bottom: 50px;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 25px; color: #fff; padding-left: 10px; border-left: 4px solid var(--brand-red); display: flex; align-items: center;"><i class="fas fa-chart-line" style="margin-right: 12px; color: #888; font-size: 1.2rem;"></i> Your Cinematic Journey</h2>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <!-- Stat Card -->
-            <div class="stat-card">
-                <i class="fas fa-bookmark stat-card-icon" style="color: var(--brand-red);"></i>
-                <h3 class="stat-card-value">{{ stats.watchlist_count }}</h3>
-                <p class="stat-card-label">Watchlist Saves</p>
-            </div>
-            
-            <div class="stat-card">
-                <i class="fas fa-star stat-card-icon" style="color: #f5c518;"></i>
-                <h3 class="stat-card-value">{{ stats.ratings_count }}</h3>
-                <p class="stat-card-label">Ratings Given</p>
-            </div>
-            
-            <div class="stat-card">
-                <i class="fas fa-comment-dots stat-card-icon" style="color: #4CAF50;"></i>
-                <h3 class="stat-card-value">{{ stats.reviews_count }}</h3>
-                <p class="stat-card-label">Reviews Authored</p>
-            </div>
+    <!-- ════════ STATS ROW ════════ -->
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 30px;">
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: var(--brand-red);"><i class="fas fa-bookmark"></i></span>
+            <div class="stat-val">{{ stats.watchlist_count }}</div>
+            <div class="stat-lbl">Watchlist</div>
+        </div>
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: #69f0ae;"><i class="fas fa-eye"></i></span>
+            <div class="stat-val">{{ stats.watched_count }}</div>
+            <div class="stat-lbl">Watched</div>
+        </div>
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: #ffd54f;"><i class="fas fa-hourglass-half"></i></span>
+            <div class="stat-val">{{ stats.pending_count }}</div>
+            <div class="stat-lbl">Pending</div>
+        </div>
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: #42a5f5;"><i class="fas fa-trophy"></i></span>
+            <div class="stat-val">{{ stats.completion_rate }}%</div>
+            <div class="stat-lbl">Complete</div>
+        </div>
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: #f5c518;"><i class="fas fa-star"></i></span>
+            <div class="stat-val">{{ stats.ratings_count }}</div>
+            <div class="stat-lbl">Ratings</div>
+        </div>
+        <div class="stat-mini">
+            <span class="stat-icon" style="color: #4CAF50;"><i class="fas fa-comment-dots"></i></span>
+            <div class="stat-val">{{ stats.reviews_count }}</div>
+            <div class="stat-lbl">Reviews</div>
         </div>
     </div>
 
-    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-        
-        <!-- Profile Settings Form -->
-        <div style="flex: 2; min-width: 320px; background: rgba(20,20,20,0.8); border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-            <h2 style="font-size: 1.5rem; margin-bottom: 30px; color: #fff; display: flex; align-items: center;"><i class="fas fa-user-edit" style="margin-right: 12px; color: var(--brand-red);"></i> Account Details</h2>
+    <!-- ════════ ANALYTICS SECTION ════════ -->
+    <div class="dash-card" style="margin-bottom: 30px;">
+        <h2 class="sec-title"><i class="fas fa-chart-pie"></i> Profile Analytics</h2>
+
+        <!-- Row 1: Rating + Engagement -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="chart-box" style="flex: 1; min-width: 280px;">
+                <div class="chart-label">RATING DISTRIBUTION</div>
+                <div style="position: relative; height: 220px;"><canvas id="ratingChart"></canvas></div>
+            </div>
+            <div class="chart-box" style="flex: 1; min-width: 280px;">
+                <div class="chart-label">ENGAGEMENT BREAKDOWN</div>
+                <div style="position: relative; height: 220px; display: flex; justify-content: center;"><canvas id="engagementChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Row 2: Genre Preference -->
+        <div class="chart-box" style="margin-top: 20px;">
+            <div class="chart-label">🎭 GENRE PREFERENCE ANALYSIS</div>
+            {% if stats.genre_labels %}
+            <div style="position: relative; height: 280px; display: flex; justify-content: center;"><canvas id="genreChart"></canvas></div>
+            {% else %}
+            <div style="text-align: center; padding: 50px 20px; color: #555;">
+                <i class="fas fa-film" style="font-size: 2.5rem; margin-bottom: 12px;"></i>
+                <p style="font-size: 0.9rem;">Rate or watch movies to unlock your genre preferences!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ════════ ACCOUNT + DANGER ZONE ════════ -->
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;">
+
+        <!-- Account Settings -->
+        <div class="dash-card" style="flex: 2; min-width: 300px;">
+            <h2 class="sec-title"><i class="fas fa-user-edit"></i> Account Details</h2>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}" style="text-align: left; margin-bottom: 25px; border-radius: 8px;">
+                        <div class="alert alert-{{ category }}" style="text-align: left; margin-bottom: 20px; border-radius: 8px; font-size: 0.9rem;">
                             <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}" style="margin-right: 8px;"></i> {{ message }}
                         </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
-            
+
             <form action="{{ url_for('auth.profile') }}" method="POST">
-                <div class="profile-input-group" style="margin-bottom: 25px;">
-                    <label>Username</label>
-                    <input type="text" name="username" value="{{ user.username }}" required>
+                <div style="margin-bottom: 20px;">
+                    <label class="pf-label">Username</label>
+                    <input type="text" name="username" value="{{ user.username }}" class="pf-input" required>
                 </div>
-                
-                <div class="profile-input-group" style="margin-bottom: 35px;">
-                    <label>Email Address</label>
-                    <input type="email" name="email" value="{{ user.email }}" required>
+                <div style="margin-bottom: 25px;">
+                    <label class="pf-label">Email Address</label>
+                    <input type="email" name="email" value="{{ user.email }}" class="pf-input" required>
                 </div>
-                
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; letter-spacing: 1px;">Update Profile</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 1rem; border-radius: 8px; font-weight: bold; letter-spacing: 0.5px;">Update Profile</button>
             </form>
         </div>
-        
+
         <!-- Danger Zone -->
-        <div style="flex: 1; min-width: 280px; background: rgba(40,10,10,0.6); border: 1px solid rgba(229,9,20,0.3); padding: 40px; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: -20px; right: -20px; font-size: 10rem; color: rgba(229,9,20,0.05); transform: rotate(15deg);"><i class="fas fa-skull"></i></div>
+        <div style="flex: 1; min-width: 260px; background: rgba(40,8,8,0.7); border: 1px solid rgba(229,9,20,0.2); padding: 30px; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -15px; right: -15px; font-size: 8rem; color: rgba(229,9,20,0.04); transform: rotate(15deg);"><i class="fas fa-skull"></i></div>
             
-            <h2 style="font-size: 1.4rem; margin-bottom: 20px; color: #ff4444; position: relative;"><i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i> Danger Zone</h2>
-            <p style="color: #ccc; line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px; position: relative;">
-                Permanently delete your account and utterly wipe your <strong style="color: white;">Watchlist</strong>, <strong style="color: white;">Ratings</strong>, and <strong style="color: white;">Reviews</strong> from our servers. This action is irreversible.
+            <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #ff4444; position: relative;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i> Danger Zone</h2>
+            <p style="color: #bbb; line-height: 1.6; font-size: 0.88rem; margin-bottom: 25px; position: relative;">
+                Permanently delete your account and wipe your <strong style="color: white;">Watchlist</strong>, <strong style="color: white;">Ratings</strong>, and <strong style="color: white;">Reviews</strong>. This action is irreversible.
             </p>
             <form action="{{ url_for('auth.delete_account') }}" method="POST" onsubmit="return confirm('CRITICAL WARNING: Are you absolutely sure you want to completely delete your account? All your movie data will be erased forever.');" style="position: relative;">
-                <button type="submit" class="btn" style="width: 100%; padding: 14px; background-color: transparent; border: 2px solid #ff4444; color: #ff4444; border-radius: 8px; font-weight: bold; font-size: 1.05rem; transition: all 0.3s;" onmouseover="this.style.backgroundColor='#ff4444'; this.style.color='white'; this.style.boxShadow='0 0 20px rgba(255,68,68,0.4)';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#ff4444'; this.style.boxShadow='none';">Terminate Account</button>
+                <button type="submit" class="btn" style="width: 100%; padding: 13px; background-color: transparent; border: 2px solid #ff4444; color: #ff4444; border-radius: 8px; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; cursor: pointer;" onmouseover="this.style.backgroundColor='#ff4444'; this.style.color='white'; this.style.boxShadow='0 0 15px rgba(255,68,68,0.3)';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#ff4444'; this.style.boxShadow='none';">Terminate Account</button>
             </form>
         </div>
-        
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Hidden data bridge: Jinja injects into HTML attributes, JS reads from DOM -->
+<div id="profile-data" style="display:none;"
+    data-rating-dist='{{ stats.rating_distribution | tojson }}'
+    data-watchlist='{{ stats.watchlist_count }}'
+    data-ratings='{{ stats.ratings_count }}'
+    data-reviews='{{ stats.reviews_count }}'
+    data-genre-labels='{{ stats.genre_labels | tojson }}'
+    data-genre-values='{{ stats.genre_values | tojson }}'
+></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Read server data from hidden DOM element (no Jinja inside script)
+    var _el = document.getElementById('profile-data');
+    var PROFILE_DATA = {
+        ratingDist: JSON.parse(_el.getAttribute('data-rating-dist')),
+        watchlistCount: parseInt(_el.getAttribute('data-watchlist')),
+        ratingsCount: parseInt(_el.getAttribute('data-ratings')),
+        reviewsCount: parseInt(_el.getAttribute('data-reviews')),
+        genreLabels: JSON.parse(_el.getAttribute('data-genre-labels')),
+        genreValues: JSON.parse(_el.getAttribute('data-genre-values'))
+    };
+
+    Chart.defaults.color = '#999';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 12;
+
+    // 1. Rating Distribution Bar Chart
+    new Chart(document.getElementById('ratingChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+            datasets: [{
+                label: 'Movies',
+                data: PROFILE_DATA.ratingDist,
+                backgroundColor: [
+                    'rgba(229,9,20,0.7)', 'rgba(255,152,0,0.7)',
+                    'rgba(255,193,7,0.7)', 'rgba(139,195,74,0.7)', 'rgba(76,175,80,0.7)'
+                ],
+                borderColor: [
+                    'rgba(229,9,20,1)', 'rgba(255,152,0,1)',
+                    'rgba(255,193,7,1)', 'rgba(139,195,74,1)', 'rgba(76,175,80,1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 2. Engagement Doughnut
+    new Chart(document.getElementById('engagementChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Watchlist', 'Ratings', 'Reviews'],
+            datasets: [{
+                data: [PROFILE_DATA.watchlistCount, PROFILE_DATA.ratingsCount, PROFILE_DATA.reviewsCount],
+                backgroundColor: ['rgba(229,9,20,0.8)', 'rgba(245,197,24,0.8)', 'rgba(76,175,80,0.8)'],
+                borderColor: 'rgba(18,18,18,1)',
+                borderWidth: 3,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
+            }
+        }
+    });
+
+    // 3. Genre Preference Doughnut
+    if (PROFILE_DATA.genreLabels.length > 0) {
+        new Chart(document.getElementById('genreChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: PROFILE_DATA.genreLabels,
+                datasets: [{
+                    data: PROFILE_DATA.genreValues,
+                    backgroundColor: [
+                        'rgba(229,9,20,0.85)', 'rgba(33,150,243,0.85)', 'rgba(76,175,80,0.85)',
+                        'rgba(255,193,7,0.85)', 'rgba(156,39,176,0.85)', 'rgba(255,87,34,0.85)',
+                        'rgba(0,188,212,0.85)', 'rgba(233,30,99,0.85)'
+                    ],
+                    borderColor: 'rgba(18,18,18,1)',
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '50%',
+                plugins: {
+                    legend: { position: 'right', labels: { padding: 12, usePointStyle: true, font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                var pct = ((ctx.raw / total) * 100).toFixed(0);
+                                return ' ' + ctx.label + ': ' + ctx.raw + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
 {% endblock %}

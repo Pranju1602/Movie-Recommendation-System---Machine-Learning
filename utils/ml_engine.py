@@ -115,3 +115,54 @@ def get_recommendations(movie_name):
             break
             
     return {"success": True, "recommendations": recommended_movies}
+
+def get_ml_mood_recommendations(mood):
+    """
+    Translates raw emotions into a highly weighted set of descriptive genres and themes,
+    vectorizes them natively via the TF-IDF engine, and pulls the nearest semantic neighbors from the local dataset.
+    """
+    if not ML_LOADED:
+        return {"error": "Machine Learning models failed to load. Check pickle files."}
+        
+    mood_map = {
+        'happy': "comedy family animation funny cheerful uplifting feel-good hilarious laugh lighthearted",
+        'sad': "drama romance tragedy emotional heartbreaking tearjerker depressing melancholic grief",
+        'excited': "action adventure thriller explosive fast-paced adrenaline epic breathtaking fight superhero",
+        'scared': "horror thriller scary terrifying creepy ghosts supernatural suspense murder chilling",
+        'relaxed': "documentary nature gentle calm peaceful slow-paced thoughtful ambient soothing",
+        'romantic': "romance love story romantic-comedy relationships couples intimate passionate wedding",
+        'bored': "mystery sci-fi fantasy mind-bending twist unpredictable thrilling engaging captivating puzzle",
+        'curious': "documentary history historical biography true story science exploration investigative factual"
+    }
+    
+    keywords = mood_map.get(mood.lower())
+    if not keywords:
+        return {"error": f"Mood '{mood}' is not mapped to any keywords."}
+        
+    text_to_vectorize = preprocess_text(keywords)
+    vector = tfidf.transform([text_to_vectorize])
+    
+    # Use KNN to find 10 nearest neighbors to this specific thematic centroid
+    distances, indices = knn_model.kneighbors(vector, n_neighbors=10)
+    
+    recommended_movies = []
+    
+    # Extract results
+    for i in range(len(indices[0])): 
+        idx = indices[0][i]
+        movie_record = movies.iloc[idx]
+        movie_id = movie_record['id']
+        title = movie_record['title']
+        
+        # Fetch high-quality poster and trailer from TMDB using the dataset ID
+        details = get_movie_details(movie_id)
+        
+        recommended_movies.append({
+            'id': movie_id,
+            'title': title,
+            'poster_path': details.get('poster_path'),
+            'rating': details.get('rating'),
+            'trailer_url': details.get('trailer_url')
+        })
+            
+    return {"success": True, "recommendations": recommended_movies}
