@@ -1,0 +1,8 @@
+Flask
+mysql-connector-python
+python-dotenv
+pandas
+scikit-learn
+requests
+groq
+nltk

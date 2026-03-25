@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - CineMatch{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2000') center/cover;">
+    <div class="auth-card" style="background-color: var(--glass-bg); padding: 60px 68px 40px; border-radius: 4px; width: 100%; max-width: 450px;">
+        <h2 style="font-size: 2rem; margin-bottom: 28px;">Sign In</h2>
+        
+        <form action="{{ url_for('auth.login') }}" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+            <input type="email" name="email" placeholder="Email" required class="auth-input">
+            
+            <input type="password" name="password" placeholder="Password" required class="auth-input">
+            
+            <button type="submit" class="btn btn-primary auth-btn">Sign In</button>
+        </form>
+        
+        <div style="margin-top: 40px; color: var(--text-muted);">
+            New to CineMatch? <a href="{{ url_for('auth.register') }}" style="color: white; font-weight: 500;">Sign up now.</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

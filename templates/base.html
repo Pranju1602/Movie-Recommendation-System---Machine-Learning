@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Movie Recommender{% endblock %}</title>
+    <!-- Google Fonts: Inter for that premium, clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-red">Cine</span><span class="logo-white">Match</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('main.home') }}" class="nav-link">Home</a>
+                <a href="#" class="nav-link">Movies</a>
+                <a href="{{ url_for('main.home') }}#trending-section" class="nav-link">Trending</a>
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('main.watchlist') }}" class="nav-link">Watchlist</a>
+                <a href="{{ url_for('main.ratings') }}" class="nav-link">My Ratings</a>
+                {% endif %}
+            </div>
+            <div class="nav-icons">
+                <a href="#" class="nav-icon"><i class="fas fa-search"></i></a>
+                {% if 'user_id' in session %}
+                    <i class="fas fa-bell" style="color: white; margin-left:15px;"></i>
+                    <a href="{{ url_for('auth.profile') }}" title="Profile" style="color: white; margin-left:15px; text-decoration: none;"><i class="fas fa-user-circle" style="font-size: 1.2rem;"></i></a>
+                    <a href="{{ url_for('auth.logout') }}" title="Logout" style="color: white; margin-left:15px;"><i class="fas fa-sign-out-alt"></i></a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding: 5px 15px; font-size: 0.9rem;">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 CineMatch. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <!-- Floating Chatbot Widget -->
+    <div id="cinebot-widget" style="z-index: 9999;">
+        <!-- Chat Icon -->
+        <button id="cinebot-btn" onclick="toggleChatbot()">
+            <i class="fas fa-robot"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="cinebot-window" style="display: none;">
+            <div class="chat-header">
+                <div>
+                    <i class="fas fa-robot" style="margin-right: 8px;"></i> <span>CineBot AI</span>
+                </div>
+                <button onclick="toggleChatbot()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem; transition: transform 0.2s;" onmouseover="this.style.transform='rotate(90deg)'" onmouseout="this.style.transform='rotate(0deg)'"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="chat-message bot-message">
+                    <strong>Hi there!</strong> I'm CineBot 🍿. Ready for an amazing movie recommendation or some insane film trivia? Chat with me!
+                </div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chat-input" placeholder="Ask finding a movie..." onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

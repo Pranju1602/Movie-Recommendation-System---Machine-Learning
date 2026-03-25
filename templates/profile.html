@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - CineMatch{% endblock %}
+
+{% block content %}
+<style>
+.stat-card {
+    flex: 1; 
+    min-width: 150px; 
+    background: rgba(30,30,30,0.6); 
+    border: 1px solid rgba(255,255,255,0.05); 
+    padding: 30px 20px; 
+    border-radius: 15px; 
+    text-align: center; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    border-color: rgba(255,255,255,0.15);
+    background: rgba(35,35,35,0.8);
+}
+.stat-card:hover::before {
+    opacity: 1;
+}
+.stat-card-icon {
+    font-size: 2.5rem; 
+    margin-bottom: 20px;
+    display: inline-block;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.stat-card:hover .stat-card-icon {
+    transform: scale(1.15) rotate(-5deg);
+}
+.stat-card-value {
+    font-size: 2.8rem; 
+    margin: 0; 
+    color: white;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+.stat-card-label {
+    color: #999; 
+    font-size: 0.9rem; 
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+}
+.profile-input-group label {
+    display: block; 
+    color: #aaa; 
+    margin-bottom: 8px; 
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.profile-input-group input {
+    width: 100%; 
+    padding: 14px 18px; 
+    font-size: 1.05rem;
+    background: rgba(0,0,0,0.3) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 8px;
+    color: white;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.profile-input-group input:focus {
+    border-color: var(--brand-red) !important;
+    box-shadow: 0 0 0 3px rgba(229,9,20,0.2) !important;
+    outline: none;
+}
+</style>
+
+<div style="max-width: 1000px; margin: 120px auto 60px auto; padding: 0 4%;">
+    
+    <!-- Profile Header Cover -->
+    <div style="background: linear-gradient(to bottom, rgba(229,9,20,0.1) 0%, rgba(20,20,20,0.8) 100%); padding: 40px; border-radius: 20px; margin-bottom: 40px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 20px;">
+            {% set initial = user.username[0]|upper %}
+            <div style="width: 110px; height: 110px; background: linear-gradient(135deg, #e50914, #8b0000); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: bold; color: white; box-shadow: 0 5px 20px rgba(229,9,20,0.5);">
+                {{ initial }}
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <h1 style="font-size: 2.8rem; margin: 0; color: white; letter-spacing: 1px; font-weight: 800;">{{ user.username }}</h1>
+                <p style="color: #ccc; margin: 8px 0 0 0; font-size: 1.1rem;"><i class="fas fa-envelope" style="margin-right:8px; color: #888;"></i>{{ user.email }}</p>
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span style="padding: 6px 15px; border-radius: 20px; background: rgba(255,255,255,0.08); font-size: 0.85rem; color: #ddd; border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="fas fa-calendar-alt" style="margin-right: 6px; color: #aaa;"></i> Member since {{ user.member_since }}
+                    </span>
+                    <span style="padding: 6px 15px; border-radius: 20px; background: rgba(76, 175, 80, 0.1); font-size: 0.85rem; color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.2);">
+                        <i class="fas fa-shield-alt" style="margin-right: 6px;"></i> Verified Account
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Activity / CineStats -->
+    <div style="margin-bottom: 50px;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 25px; color: #fff; padding-left: 10px; border-left: 4px solid var(--brand-red); display: flex; align-items: center;"><i class="fas fa-chart-line" style="margin-right: 12px; color: #888; font-size: 1.2rem;"></i> Your Cinematic Journey</h2>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <!-- Stat Card -->
+            <div class="stat-card">
+                <i class="fas fa-bookmark stat-card-icon" style="color: var(--brand-red);"></i>
+                <h3 class="stat-card-value">{{ stats.watchlist_count }}</h3>
+                <p class="stat-card-label">Watchlist Saves</p>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-star stat-card-icon" style="color: #f5c518;"></i>
+                <h3 class="stat-card-value">{{ stats.ratings_count }}</h3>
+                <p class="stat-card-label">Ratings Given</p>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-comment-dots stat-card-icon" style="color: #4CAF50;"></i>
+                <h3 class="stat-card-value">{{ stats.reviews_count }}</h3>
+                <p class="stat-card-label">Reviews Authored</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        
+        <!-- Profile Settings Form -->
+        <div style="flex: 2; min-width: 320px; background: rgba(20,20,20,0.8); border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <h2 style="font-size: 1.5rem; margin-bottom: 30px; color: #fff; display: flex; align-items: center;"><i class="fas fa-user-edit" style="margin-right: 12px; color: var(--brand-red);"></i> Account Details</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="text-align: left; margin-bottom: 25px; border-radius: 8px;">
+                            <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}" style="margin-right: 8px;"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('auth.profile') }}" method="POST">
+                <div class="profile-input-group" style="margin-bottom: 25px;">
+                    <label>Username</label>
+                    <input type="text" name="username" value="{{ user.username }}" required>
+                </div>
+                
+                <div class="profile-input-group" style="margin-bottom: 35px;">
+                    <label>Email Address</label>
+                    <input type="email" name="email" value="{{ user.email }}" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; letter-spacing: 1px;">Update Profile</button>
+            </form>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div style="flex: 1; min-width: 280px; background: rgba(40,10,10,0.6); border: 1px solid rgba(229,9,20,0.3); padding: 40px; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -20px; right: -20px; font-size: 10rem; color: rgba(229,9,20,0.05); transform: rotate(15deg);"><i class="fas fa-skull"></i></div>
+            
+            <h2 style="font-size: 1.4rem; margin-bottom: 20px; color: #ff4444; position: relative;"><i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i> Danger Zone</h2>
+            <p style="color: #ccc; line-height: 1.6; font-size: 0.95rem; margin-bottom: 30px; position: relative;">
+                Permanently delete your account and utterly wipe your <strong style="color: white;">Watchlist</strong>, <strong style="color: white;">Ratings</strong>, and <strong style="color: white;">Reviews</strong> from our servers. This action is irreversible.
+            </p>
+            <form action="{{ url_for('auth.delete_account') }}" method="POST" onsubmit="return confirm('CRITICAL WARNING: Are you absolutely sure you want to completely delete your account? All your movie data will be erased forever.');" style="position: relative;">
+                <button type="submit" class="btn" style="width: 100%; padding: 14px; background-color: transparent; border: 2px solid #ff4444; color: #ff4444; border-radius: 8px; font-weight: bold; font-size: 1.05rem; transition: all 0.3s;" onmouseover="this.style.backgroundColor='#ff4444'; this.style.color='white'; this.style.boxShadow='0 0 20px rgba(255,68,68,0.4)';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#ff4444'; this.style.boxShadow='none';">Terminate Account</button>
+            </form>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

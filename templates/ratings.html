@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}My Ratings - CineMatch{% endblock %}
+
+{% block content %}
+<div class="movie-row" style="margin-top: 120px; min-height: 70vh;">
+    <h2 class="row-title" style="font-size: 2.2rem; margin-bottom: 30px;"><i class="fas fa-star" style="color: #f5c518;"></i> My Ratings</h2>
+    
+    {% if not movies %}
+        <div style="text-align: center; padding: 100px 20px;">
+            <i class="fas fa-star-half-alt" style="font-size: 4rem; color: #333; margin-bottom: 20px;"></i>
+            <h3 style="color: #ccc; font-weight: 500;">You haven't rated any movies yet.</h3>
+            <p style="color: var(--text-muted); margin-top: 10px;">Find your favorite movies and share your opinion to help our engine recommend better.</p>
+            <a href="{{ url_for('main.home') }}" class="btn btn-primary auth-btn" style="display: inline-block; text-decoration: none; margin-top: 25px;">Discover Movies</a>
+        </div>
+    {% else %}
+        <div class="row-posters" style="flex-wrap: wrap; justify-content: flex-start; gap: 20px; padding: 10px 4%;">
+            {% for movie in movies %}
+            <div class="movie-card" id="card-{{ movie.id }}" style="width: 200px; text-align: center; position: relative; transition: transform 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; border-radius: 8px; background: rgba(0,0,0,0.5);">
+                <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" style="text-decoration: none; color: inherit; display: block;">
+                    {% if movie.poster_url %}
+                    <img src="{{ movie.poster_url }}" class="poster" alt="{{ movie.title }}" style="width: 100%; height: 300px; object-fit: cover; border-top-left-radius: 8px; border-top-right-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);">
+                    {% else %}
+                    <div class="poster" style="width: 100%; height: 300px; background: #222; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);">No Poster</div>
+                    {% endif %}
+                    
+                    <div style="padding: 0 10px;">
+                        <h4 style="margin-top: 12px; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: white; text-align: left;">{{ movie.title }}</h4>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <div style="color: #f5c518; font-weight: bold; font-size: 1rem;">
+                                <i class="fas fa-star"></i> {{ movie.user_rating }}
+                            </div>
+                            <div style="color: #888; font-size: 0.75rem;">
+                                {{ movie.date }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                
+                <div style="padding: 0 10px;">
+                    <button onclick="removeRating(this)" data-movie-id="{{ movie.id }}" data-movie-title="{{ movie.title }}" class="btn btn-secondary" style="width: 100%; margin-top: 12px; padding: 6px; font-size: 0.75rem; border: 1px solid #444; background: transparent; color: #aaa;">
+                        <i class="fas fa-trash"></i> Delete Rating
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function removeRating(btnElem) {
+    const movieId = btnElem.getAttribute('data-movie-id');
+    const movieTitle = btnElem.getAttribute('data-movie-title');
+    
+    if(confirm(`Are you sure you want to completely remove your rating for ${movieTitle}?`)) {
+        fetch('/api/ratings/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ movie_id: movieId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.getElementById('card-' + movieId);
+                card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    card.remove();
+                    if(document.querySelectorAll('.movie-card').length === 0) {
+                        window.location.reload();
+                    }
+                }, 400);
+            } else {
+                alert(data.error || "Failed to delete rating");
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

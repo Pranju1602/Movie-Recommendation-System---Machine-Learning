@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ movie.title }} - CineMatch{% endblock %}
+
+{% block content %}
+<style>
+    .movie-backdrop {
+        position: relative;
+        width: 100vw;
+        min-height: 85vh;
+        background-color: var(--bg-dark);
+        background-size: cover;
+        background-position: center top;
+        display: flex;
+        align-items: center;
+        padding: 120px 5% 60px 5%;
+    }
+
+    .detail-container {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+        z-index: 10;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .detail-poster {
+        width: 280px;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        border: 1px solid rgba(255,255,255,0.1);
+        display: none; /* Hide on mobile by default */
+    }
+
+    .detail-info {
+        flex: 1;
+        max-width: 800px;
+        text-shadow: 0 2px 10px rgba(0,0,0,1);
+    }
+
+    .detail-title {
+        font-size: 3.5rem;
+        line-height: 1.1;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .detail-meta {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        color: #bbb;
+        font-size: 1.05rem;
+        margin-bottom: 25px;
+        font-weight: 500;
+    }
+
+    .meta-tag {
+        border: 1px solid #777;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: white;
+    }
+
+    .detail-overview {
+        font-size: 1.15rem;
+        line-height: 1.6;
+        color: #e5e5e5;
+        margin-bottom: 30px;
+    }
+
+    .detail-actions {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .detail-actions .btn {
+        padding: 12px 28px;
+        font-size: 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 6px;
+    }
+
+    .btn-secondary {
+        background: rgba(40,40,40,0.8);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        backdrop-filter: blur(5px);
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(80,80,80,0.8);
+        border-color: white;
+    }
+
+    .cast-section {
+        padding: 50px 5%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .cast-grid {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+    }
+    
+    .cast-grid::-webkit-scrollbar {
+        height: 6px;
+    }
+    .cast-grid::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 4px;
+    }
+
+    .cast-card {
+        min-width: 140px;
+        position: relative;
+    }
+
+    .cast-img {
+        width: 100%;
+        height: 210px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #222;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    @media (min-width: 768px) {
+        .detail-poster {
+            display: block;
+        }
+    }
+    
+    .star-rated {
+        color: #f5c518 !important;
+    }
+    
+    .star-unrated {
+        color: #555 !important;
+    }
+    
+    .rate-star {
+        cursor: pointer;
+        font-size: 1.4rem;
+        transition: color 0.2s;
+    }
+</style>
+
+{% if movie.backdrop_url %}
+<style>
+    .dynamic-backdrop {
+        background-image: linear-gradient(to top, var(--bg-dark) 0%, rgba(0,0,0,0) 80%), 
+                          linear-gradient(to right, var(--bg-dark) 0%, rgba(0,0,0,0.1) 70%),
+                          url('{{ movie.backdrop_url }}');
+    }
+</style>
+{% endif %}
+
+<div class="movie-backdrop dynamic-backdrop">
+    <div class="detail-container" style="position: relative;">
+        
+        {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" class="detail-poster">
+        {% endif %}
+        
+        <div class="detail-info">
+            <h1 class="detail-title">{{ movie.title }}</h1>
+            
+            <div class="detail-meta">
+                <span style="color: #f5c518; font-weight: bold;"><i class="fas fa-star"></i> {{ movie.vote_average | round(1) if movie.vote_average else 'N/A' }}</span>
+                <span>{{ movie.release_date[:4] if movie.release_date else 'N/A' }}</span>
+                <span>{{ movie.runtime }} min</span>
+                {% if movie.genres %}
+                    <span class="meta-tag">{{ movie.genres[0].name }}</span>
+                {% endif %}
+            </div>
+            
+            {% if movie.tagline %}
+                <h3 style="font-style: italic; color: #ccc; font-weight: 400; margin-bottom: 15px; font-size: 1.25rem;">"{{ movie.tagline }}"</h3>
+            {% endif %}
+            
+            <p class="detail-overview">{{ movie.overview }}</p>
+            
+            <!-- Extra Metadata Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; font-size: 0.95rem; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div><span style="color: #888;">Director:</span> <span style="color: white; font-weight: 500;">{{ movie.director }}</span></div>
+                <div><span style="color: #888;">Status:</span> <span style="color: white; font-weight: 500;">{{ movie.status }}</span></div>
+                <div><span style="color: #888;">Budget:</span> <span style="color: white; font-weight: 500;">{{ movie.budget_formatted }}</span></div>
+                <div><span style="color: #888;">Revenue:</span> <span style="color: white; font-weight: 500;">{{ movie.revenue_formatted }}</span></div>
+                <div><span style="color: #888;">Production:</span> <span style="color: white; font-weight: 500;">{{ movie.production }}</span></div>
+                <div><span style="color: #888;">Language:</span> <span style="color: white; font-weight: 500; text-transform: uppercase;">{{ movie.original_language }}</span></div>
+            </div>
+            
+            <div class="detail-actions">
+                {% if movie.trailer_key %}
+                    <a href="https://www.youtube.com/watch?v={{ movie.trailer_key }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Watch Trailer
+                    </a>
+                {% endif %}
+                <button id="watchlist-btn" class="btn btn-secondary" data-movie-id="{{ movie.id }}" data-movie-title="{{ movie.title }}" onclick="toggleWatchlist(this)">
+                    <i class="fas {% if in_watchlist %}fa-check{% else %}fa-plus{% endif %}"></i> 
+                    {% if in_watchlist %}In Watchlist{% else %}Watchlist{% endif %}
+                </button>
+                
+                <div style="position: relative; display: inline-block;">
+                    <button id="rate-btn" class="btn btn-secondary" onclick="toggleRatingDropdown()">
+                        <i class="fas fa-star {% if user_rating > 0 %}star-rated{% endif %}"></i> 
+                        {% if user_rating > 0 %}{{ user_rating }} / 5{% else %}Rate{% endif %}
+                    </button>
+                    <div id="rating-dropdown" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; background: #222; border-radius: 8px; padding: 15px; z-index: 100; box-shadow: 0 5px 25px rgba(0,0,0,0.9); width: max-content; border: 1px solid #444;">
+                        <p style="margin-bottom: 12px; font-size: 0.95rem; color: #ccc; font-weight: 500;">Your Rating</p>
+                        <div style="display: flex; gap: 8px;">
+                            {% for i in range(1, 6) %}
+                            <i class="fas fa-star rate-star {% if user_rating and i <= user_rating %}star-rated{% else %}star-unrated{% endif %}" data-val="{{ i }}" data-movie-id="{{ movie.id }}" onclick="submitRating(this)"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if movie.top_cast %}
+<div class="cast-section">
+    <h2 style="font-size: 1.5rem; margin-bottom: 25px;">Top Cast</h2>
+    <div class="cast-grid">
+        {% for actor in movie.top_cast %}
+        <div class="cast-card">
+            {% if actor.profile_url %}
+                <img src="{{ actor.profile_url }}" class="cast-img" alt="{{ actor.name }}">
+            {% else %}
+                <div class="cast-img" style="display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.8rem; color: #666; padding: 10px;">No Image</div>
+            {% endif %}
+            <h4 style="margin-top: 10px; font-size: 1rem; color: white;">{{ actor.name }}</h4>
+            <p style="font-size: 0.85rem; color: #888;">{{ actor.character }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- User Reviews Section -->
+<div class="reviews-section" style="max-width: 1400px; margin: 0 auto; padding: 20px 5% 60px 5%;">
+    <h2 style="font-size: 1.5rem; margin-bottom: 25px;">User Reviews <i class="fas fa-comment-dots" style="color: var(--brand-red);"></i></h2>
+    
+    {% if session.get('user_id') %}
+    <form action="{{ url_for('main.submit_review', movie_id=movie.id) }}" method="POST" style="margin-bottom: 40px; background: rgba(30,30,30,0.8); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+        <textarea name="review_text" rows="4" placeholder="Write your thoughts about {{ movie.title }}..." required style="width: 100%; background: transparent; border: 1px solid #444; color: white; padding: 15px; border-radius: 6px; font-family: inherit; font-size: 1rem; resize: vertical; outline: none;"></textarea>
+        <button type="submit" class="btn btn-primary" style="margin-top: 15px; padding: 10px 25px; font-size: 0.95rem;">Post Review</button>
+    </form>
+    {% else %}
+    <div style="margin-bottom: 40px; background: rgba(30,30,30,0.8); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+        <p style="color: #bbb; margin-bottom: 15px;">You must be logged in to post a review.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="text-decoration: none; padding: 10px 20px; border-radius: 20px;">Login to Review</a>
+    </div>
+    {% endif %}
+    
+    <div class="reviews-list" style="display: flex; flex-direction: column; gap: 20px;">
+        {% if not reviews %}
+            <p style="color: #888; font-style: italic;">No reviews yet. Be the first to review this movie!</p>
+        {% else %}
+            {% for r in reviews %}
+            <div class="review-card" style="background: rgba(40,40,40,0.5); padding: 20px; border-radius: 8px; border-left: 4px solid var(--brand-red);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong style="color: white; font-size: 1.1rem;"><i class="fas fa-user-circle" style="color: #888; margin-right: 8px;"></i>{{ r.username }}</strong>
+                    <span style="color: #666; font-size: 0.85rem;">{{ r.date }}</span>
+                </div>
+                <p style="color: #ccc; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{{ r.review_text }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleWatchlist(btnElem) {
+    if ("{{ session.get('user_id') }}" === "None") {
+        alert("Please log in to use the Watchlist!");
+        return;
+    }
+    
+    const movieId = btnElem.getAttribute('data-movie-id');
+    const movieTitle = btnElem.getAttribute('data-movie-title');
+    
+    fetch('/api/watchlist/toggle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ movie_id: movieId, movie_title: movieTitle })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const btn = document.getElementById('watchlist-btn');
+            if (data.action === 'added') {
+                btn.innerHTML = '<i class="fas fa-check"></i> In Watchlist';
+            } else {
+                btn.innerHTML = '<i class="fas fa-plus"></i> Watchlist';
+            }
+        } else {
+            alert(data.error || "Error updating watchlist.");
+        }
+    });
+}
+
+function toggleRatingDropdown() {
+    if ("{{ session.get('user_id') }}" === "None") {
+        alert("Please log in to rate movies!");
+        return;
+    }
+    const el = document.getElementById('rating-dropdown');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitRating(starElem) {
+    const movieId = starElem.getAttribute('data-movie-id');
+    const ratingVal = parseInt(starElem.getAttribute('data-val'));
+    
+    fetch('/api/ratings/rate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ movie_id: movieId, rating: ratingVal })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const btn = document.getElementById('rate-btn');
+            btn.innerHTML = `<i class="fas fa-star" style="color: #f5c518;"></i> ${ratingVal} / 5`;
+            document.getElementById('rating-dropdown').style.display = 'none';
+            // update star colors cleanly via classes
+            document.querySelectorAll('.rate-star').forEach(star => {
+                if(parseInt(star.getAttribute('data-val')) <= ratingVal) {
+                    star.classList.add('star-rated');
+                    star.classList.remove('star-unrated');
+                } else {
+                    star.classList.add('star-unrated');
+                    star.classList.remove('star-rated');
+                }
+            });
+        } else {
+            alert(data.error || "Failed to submit rating.");
+        }
+    });
+}
+
+// Close dropdown if clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('rating-dropdown');
+    const rateBtn = document.getElementById('rate-btn');
+    if (dropdown && dropdown.style.display === 'block') {
+        if (!dropdown.contains(event.target) && !rateBtn.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+</script>
+
+{% endblock %}
