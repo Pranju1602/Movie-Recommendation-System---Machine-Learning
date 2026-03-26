@@ -7,7 +7,9 @@ import requests
 # Add parent directory to path to allow absolute imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.ml_engine import get_recommendations
-from utils.tmdb_api import get_full_movie_details, get_trending_movies
+from utils.tmdb_api import (get_full_movie_details, get_trending_movies, 
+                            get_top_grossing, get_now_playing, get_upcoming_movies,
+                            get_hidden_gems, get_popular_successful)
 from utils.db import get_db_connection
 
 main_bp = Blueprint('main', __name__)
@@ -372,3 +374,65 @@ If a user asks for recommendations, give them 2-3 top choices with a 1-sentence 
             return jsonify({"success": False, "error": f"Groq Error: {response.text}"}), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@main_bp.route('/boxoffice')
+def box_office():
+    """Box Office Central — 6-section page with filters."""
+    # Read filter query params
+    year = request.args.get('year', '')
+    genre_id = request.args.get('genre', '')
+    language = request.args.get('lang', '')
+    
+    # Fetch all sections
+    top_grossing = get_top_grossing(
+        year=int(year) if year else None,
+        genre_id=int(genre_id) if genre_id else None,
+        language=language if language else None
+    )
+    popular = get_popular_successful()
+    gems = get_hidden_gems()
+    now_playing = get_now_playing()
+    upcoming = get_upcoming_movies()
+    
+    # Genre options for filter dropdown
+    genre_options = [
+        {'id': 28, 'name': 'Action'}, {'id': 12, 'name': 'Adventure'},
+        {'id': 16, 'name': 'Animation'}, {'id': 35, 'name': 'Comedy'},
+        {'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'},
+        {'id': 14, 'name': 'Fantasy'}, {'id': 27, 'name': 'Horror'},
+        {'id': 10749, 'name': 'Romance'}, {'id': 878, 'name': 'Sci-Fi'},
+        {'id': 53, 'name': 'Thriller'}, {'id': 10752, 'name': 'War'}
+    ]
+    
+    # Language options for filter dropdown 
+    lang_options = [
+        {'code': 'en', 'name': 'Hollywood 🇺🇸'},
+        {'code': 'hi', 'name': 'Bollywood 🇮🇳'},
+        {'code': 'te', 'name': 'Telugu'},
+        {'code': 'ta', 'name': 'Tamil'},
+        {'code': 'ml', 'name': 'Malayalam'},
+        {'code': 'kn', 'name': 'Kannada'},
+        {'code': 'ko', 'name': 'Korean 🇰🇷'},
+        {'code': 'ja', 'name': 'Japanese 🇯🇵'}
+    ]
+    
+    # Year range for dropdown
+    import datetime
+    current_year = datetime.datetime.now().year
+    years = list(range(current_year, 1999, -1))
+    
+    return render_template('boxoffice.html',
+        top_grossing=top_grossing,
+        popular=popular,
+        gems=gems,
+        now_playing=now_playing,
+        upcoming=upcoming,
+        genre_options=genre_options,
+        lang_options=lang_options,
+        years=years,
+        selected_year=year,
+        selected_genre=genre_id,
+        selected_lang=language
+    )
+

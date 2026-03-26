@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login — CineMatch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 50%, #0a0a1a 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-container {
+            width: 420px; padding: 50px 40px;
+            background: rgba(18,18,18,0.9); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .login-icon {
+            width: 70px; height: 70px; border-radius: 50%;
+            background: linear-gradient(135deg, #e50914, #b20710);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; font-size: 1.8rem; color: white;
+            box-shadow: 0 0 30px rgba(229,9,20,0.3);
+        }
+        h1 { color: white; font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+        .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 30px; }
+        .form-group { text-align: left; margin-bottom: 18px; }
+        .form-group label { color: #888; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input {
+            width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+            color: white; font-size: 0.95rem; font-family: 'Inter', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus { border-color: #e50914; outline: none; }
+        .form-group input::placeholder { color: #444; }
+        .login-btn {
+            width: 100%; padding: 15px; margin-top: 10px;
+            background: linear-gradient(135deg, #e50914, #b20710);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.3s;
+        }
+        .login-btn:hover { box-shadow: 0 0 25px rgba(229,9,20,0.4); transform: translateY(-2px); }
+        .flash-msg {
+            padding: 10px 16px; border-radius: 8px; margin-bottom: 15px;
+            font-size: 0.85rem; text-align: left;
+        }
+        .flash-error { background: rgba(229,9,20,0.1); color: #ef5350; border: 1px solid rgba(229,9,20,0.2); }
+        .flash-success { background: rgba(76,175,80,0.1); color: #69f0ae; border: 1px solid rgba(76,175,80,0.2); }
+        .back-link { margin-top: 20px; display: block; color: #555; font-size: 0.82rem; text-decoration: none; }
+        .back-link:hover { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-icon"><i class="fas fa-shield-halved"></i></div>
+        <h1>Admin Panel</h1>
+        <p class="subtitle">CineMatch Management Console</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, msg in messages %}
+        <div class="flash-msg flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('admin.admin_login') }}">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Enter admin username" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="login-btn"><i class="fas fa-lock" style="margin-right: 8px;"></i>Login to Admin</button>
+        </form>
+        <a href="/" class="back-link"><i class="fas fa-arrow-left" style="margin-right: 5px;"></i>Back to CineMatch</a>
+    </div>
+</body>
+</html>

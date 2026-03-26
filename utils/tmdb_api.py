@@ -189,3 +189,256 @@ def get_movies_by_mood(mood):
     except Exception as e:
         print(f"Error fetching mood movies: {e}")
     return []
+
+
+# ═══════════════════════════════════════════
+# BOX OFFICE SECTION — TMDB API FUNCTIONS
+# ═══════════════════════════════════════════
+
+def _format_box_office_movie(movie):
+    """Helper: format a raw TMDB movie dict into a box office card dict."""
+    budget = movie.get('budget', 0) or 0
+    revenue = movie.get('revenue', 0) or 0
+    profit = revenue - budget
+    roi = round((profit / budget) * 100, 1) if budget > 0 else 0
+    
+    poster = f"https://image.tmdb.org/t/p/w500{movie['poster_path']}" if movie.get('poster_path') else None
+    genres = ", ".join([g['name'] for g in movie.get('genres', [])]) if movie.get('genres') else movie.get('genres_text', '')
+    
+    return {
+        'id': movie.get('id'),
+        'title': movie.get('title') or movie.get('original_title') or 'Unknown',
+        'poster_url': poster,
+        'rating': round(movie.get('vote_average', 0), 1),
+        'revenue': revenue,
+        'budget': budget,
+        'profit': profit,
+        'roi': roi,
+        'revenue_fmt': f"${revenue:,.0f}" if revenue else "N/A",
+        'budget_fmt': f"${budget:,.0f}" if budget else "N/A",
+        'profit_fmt': f"${profit:,.0f}" if profit != 0 else "N/A",
+        'release_date': movie.get('release_date', 'N/A'),
+        'genres': genres,
+        'popularity': movie.get('popularity', 0),
+        'language': (movie.get('original_language') or 'N/A').upper()
+    }
+
+
+def get_top_grossing(year=None, genre_id=None, language=None, page=1):
+    """Fetch top grossing movies with optional year/genre/language filters."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    # Use popularity.desc — TMDB's revenue sort has data gaps
+    url = f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}&sort_by=popularity.desc&vote_count.gte=100&page={page}"
+    
+    if year:
+        url += f"&primary_release_year={year}"
+    if genre_id:
+        url += f"&with_genres={genre_id}"
+    if language:
+        url += f"&with_original_language={language}"
+    
+    print(f"[BoxOffice] Top Grossing URL: {url}")
+    
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            results = response.json().get('results', [])
+            movies = []
+            for movie in results[:15]:
+                if movie.get('poster_path'):
+                    details = get_full_movie_details(movie['id'])
+                    if details:
+                        details['genres_text'] = ", ".join([g['name'] for g in details.get('genres', [])])
+                        movies.append(_format_box_office_movie(details))
+                if len(movies) >= 10:
+                    break
+            # Sort by revenue descending
+            movies.sort(key=lambda x: x['revenue'], reverse=True)
+            return movies
+    except Exception as e:
+        print(f"[BoxOffice] Error fetching top grossing: {e}")
+    return []
+
+
+def get_now_playing():
+    """Fetch movies currently playing in theaters."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    url = f"https://api.themoviedb.org/3/movie/now_playing?api_key={api_key}&region=IN&page=1"
+    try:
+        response = requests.get(url, timeout=8)
+        if response.status_code == 200:
+            results = response.json().get('results', [])
+            movies = []
+            for movie in results[:12]:
+                if movie.get('poster_path'):
+                    genre_names = []
+                    for gid in movie.get('genre_ids', []):
+                        genre_names.append(str(gid))  # Will be resolved on frontend if needed
+                    movies.append({
+                        'id': movie['id'],
+                        'title': movie.get('title') or movie.get('original_title') or 'Unknown',
+                        'poster_url': f"https://image.tmdb.org/t/p/w500{movie['poster_path']}",
+                        'rating': round(movie.get('vote_average', 0), 1),
+                        'release_date': movie.get('release_date', 'N/A'),
+                        'language': (movie.get('original_language') or 'N/A').upper(),
+                        'popularity': movie.get('popularity', 0)
+                    })
+            return movies
+    except Exception as e:
+        print(f"[BoxOffice] Error fetching now playing: {e}")
+    return []
+
+
+def get_upcoming_movies():
+    """Fetch upcoming movies releasing in the next few weeks."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    url = f"https://api.themoviedb.org/3/movie/upcoming?api_key={api_key}&region=IN&page=1"
+    try:
+        response = requests.get(url, timeout=8)
+        if response.status_code == 200:
+            results = response.json().get('results', [])
+            movies = []
+            for movie in results[:12]:
+                if movie.get('poster_path'):
+                    movies.append({
+                        'id': movie['id'],
+                        'title': movie.get('title') or movie.get('original_title') or 'Unknown',
+                        'poster_url': f"https://image.tmdb.org/t/p/w500{movie['poster_path']}",
+                        'rating': round(movie.get('vote_average', 0), 1),
+                        'release_date': movie.get('release_date', 'Coming Soon'),
+                        'language': (movie.get('original_language') or 'N/A').upper(),
+                        'popularity': movie.get('popularity', 0)
+                    })
+            return movies
+    except Exception as e:
+        print(f"[BoxOffice] Error fetching upcoming: {e}")
+    return []
+
+
+def get_hidden_gems():
+    """Fetch underrated movies — well-rated but NOT mainstream popular, including Bollywood."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    gems = []
+    # Page 1: International hidden gems
+    for lang_filter in ['', '&with_original_language=hi']:
+        url = (f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}"
+               f"&sort_by=vote_average.desc&vote_count.gte=200&vote_count.lte=2000"
+               f"&vote_average.gte=7.0&page=1{lang_filter}")
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                results = response.json().get('results', [])
+                seen_ids = {g['id'] for g in gems}
+                for movie in results[:12]:
+                    if movie.get('poster_path') and movie['id'] not in seen_ids:
+                        details = get_full_movie_details(movie['id'])
+                        if details:
+                            budget = details.get('budget', 0) or 0
+                            revenue = details.get('revenue', 0) or 0
+                            details['genres_text'] = ", ".join([g['name'] for g in details.get('genres', [])])
+                            formatted = _format_box_office_movie(details)
+                            if budget > 0 and revenue > 0:
+                                formatted['gem_label'] = f"ROI: {formatted['roi']}%"
+                            else:
+                                formatted['gem_label'] = f"Rating: {formatted['rating']}"
+                            gems.append(formatted)
+                    if len(gems) >= 15:
+                        break
+        except Exception as e:
+            print(f"[BoxOffice] Error fetching hidden gems: {e}")
+    return gems[:15]
+
+
+def get_biggest_flops():
+    """Fetch known high-budget movies that underperformed at the box office."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    # Curated list of known big-budget movies — we check which ones actually flopped
+    known_big_budget_ids = [
+        766507,   # Shazam! Fury of the Gods
+        640146,   # Ant-Man and the Wasp: Quantumania
+        948713,   # The Flash (2023)
+        868759,   # Ghostbusters: Frozen Empire
+        786892,   # Furiosa: A Mad Max Saga
+        746036,   # The Fall Guy (2024)
+        614933,   # The Marvels
+        338953,   # Fantastic Four
+        337404,   # Cruella
+        526896,   # Morbius
+        576925,   # My Spy
+        585083,   # Hotel Transylvania: Transformania
+        639933,   # The Suicide Squad
+        436270,   # Black Adam
+        505642,   # Black Panther: Wakanda Forever
+        667538,   # Transformers: Rise of the Beasts
+        298618,   # The Flash
+        353081,   # Mission: Impossible - Dead Reckoning
+        447365,   # Guardians of the Galaxy Vol. 3
+        1022789,  # Inside Out 2
+    ]
+    
+    try:
+        flops = []
+        for mid in known_big_budget_ids:
+            details = get_full_movie_details(mid)
+            if details:
+                budget = details.get('budget', 0) or 0
+                revenue = details.get('revenue', 0) or 0
+                # A flop = revenue didn't cover budget + marketing (rough rule: revenue < 2x budget)
+                if budget > 10000000 and revenue > 0 and revenue < (budget * 2):
+                    details['genres_text'] = ", ".join([g['name'] for g in details.get('genres', [])])
+                    formatted = _format_box_office_movie(details)
+                    estimated_loss = (budget * 2) - revenue
+                    formatted['loss'] = f"${estimated_loss:,.0f}"
+                    flops.append(formatted)
+            if len(flops) >= 8:
+                break
+        flops.sort(key=lambda x: x['profit'])
+        return flops
+    except Exception as e:
+        print(f"[BoxOffice] Error fetching flops: {e}")
+    return []
+
+
+def get_popular_successful():
+    """Fetch movies that are both mega-popular AND critically acclaimed, including Bollywood."""
+    api_key = os.getenv('TMDB_API_KEY')
+    if not api_key:
+        return []
+    
+    movies = []
+    # Fetch Hollywood blockbusters + Bollywood hits
+    for lang_filter in ['', '&with_original_language=hi']:
+        url = (f"https://api.themoviedb.org/3/discover/movie?api_key={api_key}"
+               f"&sort_by=popularity.desc&vote_average.gte=7.0&vote_count.gte=1000&page=1{lang_filter}")
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                results = response.json().get('results', [])
+                seen_ids = {m['id'] for m in movies}
+                for movie in results[:12]:
+                    if movie.get('poster_path') and movie['id'] not in seen_ids:
+                        details = get_full_movie_details(movie['id'])
+                        if details:
+                            details['genres_text'] = ", ".join([g['name'] for g in details.get('genres', [])])
+                            movies.append(_format_box_office_movie(details))
+                    if len(movies) >= 15:
+                        break
+        except Exception as e:
+            print(f"[BoxOffice] Error fetching popular successful: {e}")
+    return movies[:15]
+

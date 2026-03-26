@@ -76,6 +76,25 @@ def init_db():
             )
         """)
         
+        # Create Admin Movies table (custom movies added by admin)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS admin_movies (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                genre VARCHAR(255),
+                cast_names TEXT,
+                director VARCHAR(255),
+                release_year INT,
+                description TEXT,
+                rating FLOAT DEFAULT 0,
+                trailer_link VARCHAR(500),
+                poster_url VARCHAR(500),
+                language VARCHAR(50) DEFAULT 'English',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        """)
+        
         conn.commit()
         cursor.close()
         conn.close()

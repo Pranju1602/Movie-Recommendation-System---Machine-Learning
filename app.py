@@ -11,9 +11,11 @@ app.secret_key = os.urandom(24) # Replace with a fixed secret key in production
 # Register Blueprints
 from routes.auth_routes import auth_bp
 from routes.main_routes import main_bp
+from routes.admin_routes import admin_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(main_bp)
+app.register_blueprint(admin_bp)
 
 # Auto-initialize database tables if missing
 from utils.db import init_db

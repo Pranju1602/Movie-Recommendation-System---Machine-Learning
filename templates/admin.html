@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — CineMatch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #ddd; display: flex; min-height: 100vh; }
+
+        /* ═══ SIDEBAR ═══ */
+        .sidebar {
+            width: 240px; background: rgba(14,14,14,0.98); border-right: 1px solid rgba(255,255,255,0.04);
+            position: fixed; top: 0; left: 0; height: 100vh; padding: 24px 0; z-index: 100;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-brand {
+            padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            margin-bottom: 16px; text-align: center;
+        }
+        .sidebar-brand h2 { font-size: 1.2rem; color: white; font-weight: 800; }
+        .sidebar-brand h2 span { color: #e50914; }
+        .sidebar-brand p { color: #555; font-size: 0.7rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-nav { flex: 1; }
+        .nav-item {
+            display: flex; align-items: center; padding: 12px 24px; gap: 12px;
+            color: #777; text-decoration: none; font-size: 0.88rem; font-weight: 500;
+            transition: all 0.2s; border-left: 3px solid transparent;
+        }
+        .nav-item:hover { color: #ddd; background: rgba(255,255,255,0.02); }
+        .nav-item.active { color: #e50914; background: rgba(229,9,20,0.05); border-left-color: #e50914; }
+        .nav-item i { width: 18px; text-align: center; font-size: 0.9rem; }
+        .sidebar-footer {
+            padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .admin-info { font-size: 0.78rem; color: #555; margin-bottom: 10px; }
+        .admin-info span { color: #e50914; font-weight: 600; }
+        .logout-btn {
+            display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+            background: rgba(229,9,20,0.08); border: 1px solid rgba(229,9,20,0.1);
+            border-radius: 8px; color: #e50914; font-size: 0.82rem; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; width: 100%; justify-content: center;
+        }
+        .logout-btn:hover { background: rgba(229,9,20,0.15); }
+
+        /* ═══ MAIN CONTENT ═══ */
+        .main { margin-left: 240px; flex: 1; padding: 30px; }
+        .page-header { margin-bottom: 28px; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 800; color: white; }
+        .page-header p { color: #555; font-size: 0.85rem; margin-top: 4px; }
+
+        /* ═══ STAT CARDS ═══ */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card {
+            background: rgba(18,18,18,0.9); border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px; padding: 22px; position: relative; overflow: hidden;
+        }
+        .stat-card .stat-icon {
+            width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 1rem; margin-bottom: 14px;
+        }
+        .stat-card .stat-value { font-size: 1.8rem; font-weight: 900; color: white; }
+        .stat-card .stat-label { font-size: 0.75rem; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-icon.red { background: rgba(229,9,20,0.1); color: #e50914; }
+        .stat-icon.blue { background: rgba(33,150,243,0.1); color: #42a5f5; }
+        .stat-icon.green { background: rgba(76,175,80,0.1); color: #69f0ae; }
+        .stat-icon.gold { background: rgba(245,197,24,0.1); color: #f5c518; }
+        .stat-icon.purple { background: rgba(156,39,176,0.1); color: #ba68c8; }
+
+        /* ═══ CARDS / PANELS ═══ */
+        .panel {
+            background: rgba(18,18,18,0.9); border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px; padding: 24px; margin-bottom: 20px;
+        }
+        .panel-title {
+            font-size: 1rem; font-weight: 700; color: white; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .panel-title i { color: #e50914; }
+
+        /* ═══ DATA TABLE ═══ */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            text-align: left; padding: 12px 14px; font-size: 0.72rem;
+            color: #666; text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.04); font-weight: 600;
+        }
+        .data-table td {
+            padding: 12px 14px; font-size: 0.85rem; color: #bbb;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .data-table tr:hover td { background: rgba(255,255,255,0.01); }
+        .data-table .actions { display: flex; gap: 8px; }
+
+        /* ═══ BUTTONS ═══ */
+        .btn {
+            padding: 7px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+            border: none; cursor: pointer; font-family: 'Inter'; transition: all 0.2s;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-red { background: rgba(229,9,20,0.1); color: #ef5350; border: 1px solid rgba(229,9,20,0.15); }
+        .btn-red:hover { background: rgba(229,9,20,0.2); }
+        .btn-green { background: rgba(76,175,80,0.1); color: #69f0ae; border: 1px solid rgba(76,175,80,0.15); }
+        .btn-green:hover { background: rgba(76,175,80,0.2); }
+        .btn-blue { background: rgba(33,150,243,0.1); color: #42a5f5; border: 1px solid rgba(33,150,243,0.15); }
+        .btn-blue:hover { background: rgba(33,150,243,0.2); }
+        .btn-primary {
+            background: linear-gradient(135deg, #e50914, #b20710); color: white; border: none;
+            padding: 10px 20px; font-size: 0.85rem;
+        }
+        .btn-primary:hover { box-shadow: 0 0 15px rgba(229,9,20,0.3); }
+
+        /* ═══ FORMS ═══ */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
+            color: white; font-size: 0.88rem; font-family: 'Inter';
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #e50914; outline: none; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-full { grid-column: 1 / -1; }
+
+        /* ═══ SEARCH BAR ═══ */
+        .search-bar {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .search-bar input {
+            flex: 1; padding: 10px 16px; background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
+            color: white; font-size: 0.88rem; font-family: 'Inter';
+        }
+        .search-bar input:focus { border-color: #e50914; outline: none; }
+
+        /* ═══ ACTIVITY FEED ═══ */
+        .activity-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .activity-dot.user { background: #42a5f5; }
+        .activity-dot.review { background: #69f0ae; }
+        .activity-dot.rating { background: #f5c518; }
+        .activity-text { font-size: 0.82rem; color: #aaa; flex: 1; }
+        .activity-date { font-size: 0.72rem; color: #444; }
+
+        /* ═══ FLASH MESSAGES ═══ */
+        .flash-bar {
+            padding: 12px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem;
+        }
+        .flash-bar.success { background: rgba(76,175,80,0.1); color: #69f0ae; border: 1px solid rgba(76,175,80,0.15); }
+        .flash-bar.error { background: rgba(229,9,20,0.1); color: #ef5350; border: 1px solid rgba(229,9,20,0.15); }
+
+        /* ═══ CHARTS ═══ */
+        .chart-container { max-width: 400px; margin: 0 auto; }
+        .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .dual-grid { grid-template-columns: 1fr; } }
+
+        /* ═══ MODAL ═══ */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            z-index: 200; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #1a1a1a; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; padding: 30px; width: 560px; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-box h3 { color: white; font-size: 1.1rem; margin-bottom: 20px; }
+        .modal-close {
+            float: right; background: none; border: none; color: #666;
+            font-size: 1.2rem; cursor: pointer;
+        }
+        .modal-close:hover { color: white; }
+
+        /* ═══ BADGE ═══ */
+        .badge {
+            padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;
+        }
+        .badge-green { background: rgba(76,175,80,0.1); color: #69f0ae; }
+        .badge-red { background: rgba(229,9,20,0.1); color: #ef5350; }
+        .badge-blue { background: rgba(33,150,243,0.1); color: #42a5f5; }
+    </style>
+</head>
+<body>
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <h2>Cine<span>Match</span></h2>
+            <p>Admin Console</p>
+        </div>
+        <div class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if section == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="nav-item {% if section == 'users' %}active{% endif %}">
+                <i class="fas fa-users"></i> Users
+            </a>
+            <a href="{{ url_for('admin.movies') }}" class="nav-item {% if section == 'movies' %}active{% endif %}">
+                <i class="fas fa-film"></i> Movies
+            </a>
+            <a href="{{ url_for('admin.ratings') }}" class="nav-item {% if section == 'ratings' %}active{% endif %}">
+                <i class="fas fa-star"></i> Ratings
+            </a>
+            <a href="{{ url_for('admin.reviews') }}" class="nav-item {% if section == 'reviews' %}active{% endif %}">
+                <i class="fas fa-comment-dots"></i> Reviews
+            </a>
+            <a href="{{ url_for('admin.analytics') }}" class="nav-item {% if section == 'analytics' %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <div class="admin-info">Logged in as <span>{{ admin_name|capitalize }}</span></div>
+            <a href="{{ url_for('admin.admin_logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <div style="padding: 10px 24px 0;">
+            <a href="/" style="color: #444; font-size: 0.75rem; text-decoration: none;"><i class="fas fa-arrow-left" style="margin-right: 4px;"></i>Back to Site</a>
+        </div>
+    </nav>
+
+    <!-- ═══════════ MAIN CONTENT ═══════════ -->
+    <div class="main">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, msg in messages %}
+        <div class="flash-bar {{ category }}">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--              DASHBOARD                  -->
+        <!-- ═══════════════════════════════════════ -->
+        {% if section == 'dashboard' %}
+        <div class="page-header">
+            <h1>📊 Dashboard</h1>
+            <p>Platform overview and recent activity</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                <div class="stat-value">{{ stats.users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon gold"><i class="fas fa-star"></i></div>
+                <div class="stat-value">{{ stats.ratings }}</div>
+                <div class="stat-label">Total Ratings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-comment-dots"></i></div>
+                <div class="stat-value">{{ stats.reviews }}</div>
+                <div class="stat-label">Total Reviews</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-bookmark"></i></div>
+                <div class="stat-value">{{ stats.watchlist }}</div>
+                <div class="stat-label">Watchlist Entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-film"></i></div>
+                <div class="stat-value">{{ stats.movies }}</div>
+                <div class="stat-label">Admin Movies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon gold"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-value">{{ stats.avg_rating }}</div>
+                <div class="stat-label">Avg Rating</div>
+            </div>
+        </div>
+
+        <div class="dual-grid">
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-clock"></i> Recent Activity</div>
+                {% if recent_activity %}
+                {% for act in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-dot {{ act.type }}"></div>
+                    <div class="activity-text">{{ act.text }}</div>
+                    <div class="activity-date">{{ act.date.strftime('%d %b, %H:%M') if act.date else '' }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #444; font-size: 0.85rem;">No recent activity yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-chart-bar"></i> Rating Distribution</div>
+                <div class="chart-container">
+                    <canvas id="ratingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {% if stats.rating_dist %}
+        <script>
+            const rCtx = document.getElementById('ratingChart').getContext('2d');
+            new Chart(rCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for r in stats.rating_dist %}'{{ r.score }} ⭐'{% if not loop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Ratings',
+                        data: [{% for r in stats.rating_dist %}{{ r.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+                        backgroundColor: 'rgba(229,9,20,0.5)',
+                        borderColor: '#e50914',
+                        borderWidth: 1, borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#555' }, grid: { color: 'rgba(255,255,255,0.03)' } },
+                        x: { ticks: { color: '#555' }, grid: { display: false } }
+                    }
+                }
+            });
+        </script>
+        {% endif %}
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--            USER MANAGEMENT              -->
+        <!-- ═══════════════════════════════════════ -->
+        {% elif section == 'users' %}
+        <div class="page-header">
+            <h1>👥 User Management</h1>
+            <p>Manage registered users</p>
+        </div>
+
+        <form class="search-bar" method="GET" action="{{ url_for('admin.users') }}">
+            <input type="text" name="search" placeholder="Search by username or email..." value="{{ search }}">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+            {% if search %}<a href="{{ url_for('admin.users') }}" class="btn btn-blue">Reset</a>{% endif %}
+        </form>
+
+        <div class="panel">
+            <div class="panel-title"><i class="fas fa-list"></i> All Users ({{ users|length }})</div>
+            <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Username</th><th>Email</th><th>Joined</th>
+                        <th>Ratings</th><th>Reviews</th><th>Watchlist</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>#{{ user.id }}</td>
+                        <td style="color: white; font-weight: 600;">{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else 'N/A' }}</td>
+                        <td><span class="badge badge-green">{{ user.rating_count }}</span></td>
+                        <td><span class="badge badge-blue">{{ user.review_count }}</span></td>
+                        <td><span class="badge badge-green">{{ user.watchlist_count }}</span></td>
+                        <td class="actions">
+                            <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                                  onsubmit="return confirm('Delete user {{ user.username }}? This removes ALL their data.')">
+                                <button type="submit" class="btn btn-red"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not users %}
+                    <tr><td colspan="8" style="text-align: center; color: #444; padding: 30px;">No users found.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--           MOVIE MANAGEMENT              -->
+        <!-- ═══════════════════════════════════════ -->
+        {% elif section == 'movies' %}
+        <div class="page-header">
+            <h1>🎬 Movie Management</h1>
+            <p>Add, edit, and manage movies in your database</p>
+        </div>
+
+        <!-- Add Movie Button -->
+        <button class="btn btn-primary" style="margin-bottom: 20px;" onclick="document.getElementById('addMovieModal').classList.add('active')">
+            <i class="fas fa-plus"></i> Add New Movie
+        </button>
+
+        <!-- Movies Table -->
+        <div class="panel">
+            <div class="panel-title"><i class="fas fa-database"></i> All Movies ({{ movies|length }})</div>
+            <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Poster</th><th>Title</th><th>Genre</th><th>Director</th>
+                        <th>Year</th><th>Rating</th><th>Language</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movie in movies %}
+                    <tr>
+                        <td>#{{ movie.id }}</td>
+                        <td>
+                            {% if movie.poster_url %}
+                            <img src="{{ movie.poster_url }}" style="width: 40px; height: 56px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                            <div style="width: 40px; height: 56px; background: #222; border-radius: 4px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-film" style="color: #444;"></i></div>
+                            {% endif %}
+                        </td>
+                        <td style="color: white; font-weight: 600;">{{ movie.title }}</td>
+                        <td>{{ movie.genre or '—' }}</td>
+                        <td>{{ movie.director or '—' }}</td>
+                        <td>{{ movie.release_year or '—' }}</td>
+                        <td><span class="badge badge-green">⭐ {{ movie.rating }}</span></td>
+                        <td>{{ movie.language }}</td>
+                        <td class="actions">
+                            <button class="btn btn-blue" onclick="openEditModal({{ movie.id }}, '{{ movie.title }}', '{{ movie.genre }}', '{{ movie.cast_names or '' }}', '{{ movie.director or '' }}', '{{ movie.release_year or '' }}', '{{ movie.description or '' }}', '{{ movie.rating }}', '{{ movie.trailer_link or '' }}', '{{ movie.poster_url or '' }}', '{{ movie.language }}')"><i class="fas fa-edit"></i></button>
+                            <form method="POST" action="{{ url_for('admin.delete_movie', movie_id=movie.id) }}" style="display:inline;"
+                                  onsubmit="return confirm('Delete {{ movie.title }}?')">
+                                <button type="submit" class="btn btn-red"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not movies %}
+                    <tr><td colspan="9" style="text-align: center; color: #444; padding: 30px;">No movies added yet. Click "Add New Movie" to start!</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ADD MOVIE MODAL -->
+        <div class="modal-overlay" id="addMovieModal">
+            <div class="modal-box">
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+                <h3><i class="fas fa-plus" style="color: #e50914; margin-right: 8px;"></i>Add New Movie</h3>
+                <form method="POST" action="{{ url_for('admin.add_movie') }}">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Title *</label><input type="text" name="title" required></div>
+                        <div class="form-group"><label>Genre</label><input type="text" name="genre" placeholder="Action, Drama..."></div>
+                        <div class="form-group"><label>Director</label><input type="text" name="director"></div>
+                        <div class="form-group"><label>Release Year</label><input type="number" name="release_year" min="1900" max="2030"></div>
+                        <div class="form-group"><label>Cast</label><input type="text" name="cast_names" placeholder="Actor 1, Actor 2..."></div>
+                        <div class="form-group"><label>Rating (0-10)</label><input type="number" name="rating" step="0.1" min="0" max="10"></div>
+                        <div class="form-group"><label>Language</label>
+                            <select name="language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Tamil</option><option>Malayalam</option><option>Korean</option><option>Japanese</option></select>
+                        </div>
+                        <div class="form-group"><label>Poster URL</label><input type="url" name="poster_url" placeholder="https://..."></div>
+                        <div class="form-group form-full"><label>Trailer Link (YouTube)</label><input type="url" name="trailer_link" placeholder="https://youtube.com/..."></div>
+                        <div class="form-group form-full"><label>Description</label><textarea name="description" rows="3"></textarea></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 10px; width: 100%;"><i class="fas fa-plus"></i> Add Movie</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- EDIT MOVIE MODAL -->
+        <div class="modal-overlay" id="editMovieModal">
+            <div class="modal-box">
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+                <h3><i class="fas fa-edit" style="color: #42a5f5; margin-right: 8px;"></i>Edit Movie</h3>
+                <form method="POST" id="editMovieForm">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Title *</label><input type="text" name="title" id="edit_title" required></div>
+                        <div class="form-group"><label>Genre</label><input type="text" name="genre" id="edit_genre"></div>
+                        <div class="form-group"><label>Director</label><input type="text" name="director" id="edit_director"></div>
+                        <div class="form-group"><label>Release Year</label><input type="number" name="release_year" id="edit_year" min="1900" max="2030"></div>
+                        <div class="form-group"><label>Cast</label><input type="text" name="cast_names" id="edit_cast"></div>
+                        <div class="form-group"><label>Rating (0-10)</label><input type="number" name="rating" id="edit_rating" step="0.1" min="0" max="10"></div>
+                        <div class="form-group"><label>Language</label>
+                            <select name="language" id="edit_language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Tamil</option><option>Malayalam</option><option>Korean</option><option>Japanese</option></select>
+                        </div>
+                        <div class="form-group"><label>Poster URL</label><input type="url" name="poster_url" id="edit_poster"></div>
+                        <div class="form-group form-full"><label>Trailer Link</label><input type="url" name="trailer_link" id="edit_trailer"></div>
+                        <div class="form-group form-full"><label>Description</label><textarea name="description" id="edit_desc" rows="3"></textarea></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 10px; width: 100%;"><i class="fas fa-save"></i> Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function openEditModal(id, title, genre, cast, director, year, desc, rating, trailer, poster, lang) {
+            document.getElementById('editMovieForm').action = '/admin/movies/edit/' + id;
+            document.getElementById('edit_title').value = title;
+            document.getElementById('edit_genre').value = genre;
+            document.getElementById('edit_cast').value = cast;
+            document.getElementById('edit_director').value = director;
+            document.getElementById('edit_year').value = year;
+            document.getElementById('edit_desc').value = desc;
+            document.getElementById('edit_rating').value = rating;
+            document.getElementById('edit_trailer').value = trailer;
+            document.getElementById('edit_poster').value = poster;
+            document.getElementById('edit_language').value = lang;
+            document.getElementById('editMovieModal').classList.add('active');
+        }
+        </script>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--          RATINGS MANAGEMENT             -->
+        <!-- ═══════════════════════════════════════ -->
+        {% elif section == 'ratings' %}
+        <div class="page-header">
+            <h1>⭐ Ratings Management</h1>
+            <p>View and moderate all user ratings</p>
+        </div>
+
+        {% if rating_stats and rating_stats.most_rated %}
+        <div class="panel" style="margin-bottom: 20px;">
+            <div class="panel-title"><i class="fas fa-trophy"></i> Most Rated Movies (Top 10)</div>
+            <table class="data-table">
+                <thead><tr><th>Movie ID</th><th>Times Rated</th><th>Avg Rating</th></tr></thead>
+                <tbody>
+                {% for m in rating_stats.most_rated %}
+                <tr>
+                    <td>#{{ m.movie_id }}</td>
+                    <td><span class="badge badge-blue">{{ m.count }} ratings</span></td>
+                    <td><span class="badge badge-green">⭐ {{ m.avg_rating }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="panel">
+            <div class="panel-title"><i class="fas fa-list"></i> All Ratings ({{ ratings|length }})</div>
+            <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead><tr><th>ID</th><th>User</th><th>Movie ID</th><th>Rating</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for r in ratings %}
+                <tr>
+                    <td>#{{ r.id }}</td>
+                    <td style="color: white; font-weight: 500;">{{ r.username }}</td>
+                    <td>#{{ r.movie_id }}</td>
+                    <td><span class="badge badge-green">⭐ {{ r.rating_value }}</span></td>
+                    <td>{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else 'N/A' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.delete_rating', rating_id=r.id) }}"
+                              onsubmit="return confirm('Delete this rating?')">
+                            <button type="submit" class="btn btn-red"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not ratings %}
+                <tr><td colspan="6" style="text-align: center; color: #444; padding: 30px;">No ratings yet.</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--          REVIEWS MANAGEMENT             -->
+        <!-- ═══════════════════════════════════════ -->
+        {% elif section == 'reviews' %}
+        <div class="page-header">
+            <h1>📝 Reviews Management</h1>
+            <p>Moderate user reviews</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title"><i class="fas fa-list"></i> All Reviews ({{ reviews|length }})</div>
+            <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead><tr><th>ID</th><th>User</th><th>Movie ID</th><th>Review</th><th>Length</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for rv in reviews %}
+                <tr>
+                    <td>#{{ rv.id }}</td>
+                    <td style="color: white; font-weight: 500;">{{ rv.username }}</td>
+                    <td>#{{ rv.movie_id }}</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rv.review_text }}</td>
+                    <td>
+                        {% if rv.review_text|length < 20 %}
+                        <span class="badge badge-red">Short</span>
+                        {% elif rv.review_text|length > 200 %}
+                        <span class="badge badge-green">Detailed</span>
+                        {% else %}
+                        <span class="badge badge-blue">Normal</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ rv.created_at.strftime('%d %b %Y') if rv.created_at else 'N/A' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.delete_review', review_id=rv.id) }}"
+                              onsubmit="return confirm('Delete this review?')">
+                            <button type="submit" class="btn btn-red"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not reviews %}
+                <tr><td colspan="7" style="text-align: center; color: #444; padding: 30px;">No reviews yet.</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--              ANALYTICS                  -->
+        <!-- ═══════════════════════════════════════ -->
+        {% elif section == 'analytics' %}
+        <div class="page-header">
+            <h1>📊 Analytics Panel</h1>
+            <p>Platform engagement and content insights</p>
+        </div>
+
+        <div class="dual-grid">
+            <!-- Most Watchlisted -->
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-bookmark"></i> Most Watchlisted Movies</div>
+                {% if analytics.most_watchlisted %}
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>Movie</th><th>Count</th></tr></thead>
+                    <tbody>
+                    {% for m in analytics.most_watchlisted %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td style="color: white;">{{ m.movie_title }}</td>
+                        <td><span class="badge badge-blue">{{ m.count }} users</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}<p style="color: #444; font-size: 0.85rem;">No watchlist data.</p>{% endif %}
+            </div>
+
+            <!-- Most Watched -->
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-eye"></i> Most Watched (Completed)</div>
+                {% if analytics.most_watched %}
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>Movie</th><th>Count</th></tr></thead>
+                    <tbody>
+                    {% for m in analytics.most_watched %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td style="color: white;">{{ m.movie_title }}</td>
+                        <td><span class="badge badge-green">{{ m.count }} users</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}<p style="color: #444; font-size: 0.85rem;">No watched data.</p>{% endif %}
+            </div>
+        </div>
+
+        <!-- Top Users -->
+        <div class="panel">
+            <div class="panel-title"><i class="fas fa-crown"></i> Most Active Users</div>
+            {% if analytics.top_users %}
+            <table class="data-table">
+                <thead><tr><th>#</th><th>User</th><th>Ratings</th><th>Reviews</th><th>Watchlist</th><th>Total</th></tr></thead>
+                <tbody>
+                {% for u in analytics.top_users %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td style="color: white; font-weight: 600;">{{ u.username }}</td>
+                    <td>{{ u.ratings }}</td>
+                    <td>{{ u.reviews }}</td>
+                    <td>{{ u.watchlist }}</td>
+                    <td><span class="badge badge-green">{{ u.ratings + u.reviews + u.watchlist }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}<p style="color: #444; font-size: 0.85rem;">No user data.</p>{% endif %}
+        </div>
+
+        <div class="dual-grid">
+            <!-- Rating Brackets -->
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-chart-pie"></i> Rating Distribution</div>
+                {% if analytics.rating_brackets %}
+                <div class="chart-container">
+                    <canvas id="bracketChart"></canvas>
+                </div>
+                <script>
+                    new Chart(document.getElementById('bracketChart').getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: [{% for b in analytics.rating_brackets %}'{{ b.bracket }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                            datasets: [{
+                                data: [{% for b in analytics.rating_brackets %}{{ b.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+                                backgroundColor: ['#ef5350','#ff7043','#ffa726','#66bb6a','#42a5f5'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { labels: { color: '#888', font: { size: 11 } } } } }
+                    });
+                </script>
+                {% else %}<p style="color: #444; font-size: 0.85rem;">No ratings data.</p>{% endif %}
+            </div>
+
+            <!-- Signups Over Time -->
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-user-plus"></i> User Signups (Monthly)</div>
+                {% if analytics.signups %}
+                <div class="chart-container">
+                    <canvas id="signupChart"></canvas>
+                </div>
+                <script>
+                    new Chart(document.getElementById('signupChart').getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: [{% for s in analytics.signups|reverse %}'{{ s.month }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                            datasets: [{
+                                label: 'New Users',
+                                data: [{% for s in analytics.signups|reverse %}{{ s.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+                                borderColor: '#e50914', backgroundColor: 'rgba(229,9,20,0.1)',
+                                fill: true, tension: 0.4, borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#e50914'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { ticks: { color: '#555' }, grid: { color: 'rgba(255,255,255,0.03)' } },
+                                x: { ticks: { color: '#555' }, grid: { display: false } }
+                            }
+                        }
+                    });
+                </script>
+                {% else %}<p style="color: #444; font-size: 0.85rem;">No signup data.</p>{% endif %}
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</body>
+</html>

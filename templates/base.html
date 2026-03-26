@@ -21,6 +21,7 @@
             <div class="nav-links">
                 <a href="{{ url_for('main.home') }}" class="nav-link">Home</a>
                 <a href="{{ url_for('main.compare_movies') }}" class="nav-link">Compare</a>
+                <a href="{{ url_for('main.box_office') }}" class="nav-link">Box Office</a>
                 <a href="{{ url_for('main.home') }}#trending-section" class="nav-link">Trending</a>
                 {% if session.get('user_id') %}
                 <a href="{{ url_for('main.watchlist') }}" class="nav-link">Watchlist</a>

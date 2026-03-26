@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+
+{% block title %}Box Office Central - CineMatch{% endblock %}
+
+{% block content %}
+<style>
+.bo-page { max-width: 1200px; margin: 100px auto 60px; padding: 0 4%; }
+
+/* Section container */
+.bo-section {
+    background: rgba(18,18,18,0.85); border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px; padding: 30px; margin-bottom: 30px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+}
+.bo-title {
+    font-size: 1.3rem; margin-bottom: 22px; color: #fff;
+    padding-left: 12px; border-left: 3px solid var(--brand-red);
+    display: flex; align-items: center; font-weight: 700;
+}
+.bo-title i { margin-right: 10px; font-size: 1rem; }
+
+/* Filter bar */
+.filter-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 25px;
+    padding: 16px 20px; background: rgba(0,0,0,0.3); border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.04); align-items: center;
+}
+.filter-bar select {
+    padding: 10px 14px; background: rgba(30,30,30,0.9); color: #ddd;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+    font-size: 0.9rem; cursor: pointer; min-width: 160px;
+    transition: border-color 0.3s;
+}
+.filter-bar select:focus { border-color: var(--brand-red); outline: none; }
+.filter-btn {
+    padding: 10px 24px; background: var(--brand-red); color: white; border: none;
+    border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;
+    transition: all 0.3s;
+}
+.filter-btn:hover { background: #ff1a1a; box-shadow: 0 0 15px rgba(229,9,20,0.3); transform: translateY(-1px); }
+.filter-reset {
+    padding: 10px 18px; background: transparent; color: #888; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.3s;
+}
+.filter-reset:hover { color: white; border-color: rgba(255,255,255,0.3); }
+
+/* Movie scroll row */
+.bo-scroll {
+    display: flex; gap: 18px; overflow-x: auto; padding-bottom: 15px;
+    scrollbar-width: thin; scrollbar-color: rgba(229,9,20,0.3) transparent;
+}
+.bo-scroll::-webkit-scrollbar { height: 6px; }
+.bo-scroll::-webkit-scrollbar-thumb { background: rgba(229,9,20,0.4); border-radius: 3px; }
+
+/* Movie card */
+.bo-card {
+    min-width: 200px; max-width: 200px; text-align: center;
+    transition: transform 0.3s ease; cursor: pointer; flex-shrink: 0;
+}
+.bo-card:hover { transform: translateY(-8px); }
+.bo-card img {
+    width: 100%; height: 280px; object-fit: cover; border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+.bo-card h4 {
+    margin-top: 10px; font-size: 0.88rem; color: white; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bo-card .bo-rating { color: #f5c518; font-size: 0.82rem; font-weight: 700; margin-top: 4px; }
+
+/* Ranked movie card (Top Grossing) */
+.bo-ranked {
+    display: flex; align-items: center; padding: 16px; gap: 18px;
+    background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 12px; margin-bottom: 12px; transition: all 0.3s;
+    text-decoration: none; color: inherit;
+}
+.bo-ranked:hover { background: rgba(229,9,20,0.05); border-color: rgba(229,9,20,0.15); transform: translateX(4px); }
+.bo-rank {
+    font-size: 2rem; font-weight: 900; color: rgba(255,255,255,0.08); min-width: 50px; text-align: center;
+}
+.bo-ranked img { width: 60px; height: 85px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.bo-meta { flex: 1; min-width: 0; }
+.bo-meta h4 { font-size: 1rem; color: white; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bo-meta-row { display: flex; gap: 15px; margin-top: 6px; flex-wrap: wrap; }
+.bo-tag {
+    font-size: 0.75rem; padding: 3px 10px; border-radius: 12px;
+    background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid rgba(255,255,255,0.06);
+}
+.bo-tag.green { background: rgba(76,175,80,0.1); color: #69f0ae; border-color: rgba(76,175,80,0.15); }
+.bo-tag.red { background: rgba(229,9,20,0.1); color: #ef5350; border-color: rgba(229,9,20,0.15); }
+.bo-tag.gold { background: rgba(245,197,24,0.1); color: #f5c518; border-color: rgba(245,197,24,0.15); }
+.bo-tag.blue { background: rgba(33,150,243,0.1); color: #42a5f5; border-color: rgba(33,150,243,0.15); }
+
+/* Profit bar */
+.profit-bar {
+    height: 4px; border-radius: 2px; margin-top: 8px; max-width: 200px;
+    background: rgba(255,255,255,0.05);
+}
+.profit-fill {
+    height: 100%; border-radius: 2px; transition: width 0.6s ease;
+}
+
+/* Empty state */
+.bo-empty {
+    text-align: center; padding: 40px 20px; color: #555;
+}
+.bo-empty i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+
+/* Dual section */
+.bo-dual { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+.bo-dual > div { flex: 1; min-width: 350px; }
+</style>
+
+<div class="bo-page">
+
+    <!-- ════════ HERO BANNER ════════ -->
+    <div style="text-align: center; margin-bottom: 35px; padding: 40px 30px; background: linear-gradient(135deg, rgba(229,9,20,0.06) 0%, rgba(10,10,10,0.95) 50%, rgba(245,197,24,0.04) 100%); border-radius: 20px; border: 1px solid rgba(255,255,255,0.03);">
+        <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0; color: white;">
+            <i class="fas fa-chart-line" style="color: var(--brand-red); margin-right: 10px;"></i>
+            Box Office <span style="color: var(--brand-red);">Central</span>
+        </h1>
+        <p style="color: #777; margin-top: 10px; font-size: 1rem;">Revenue analytics, smart picks, and what's playing now</p>
+    </div>
+
+    <!-- ════════ 1. TOP GROSSING WITH FILTERS ════════ -->
+    <div class="bo-section">
+        <h2 class="bo-title"><i class="fas fa-trophy" style="color: #f5c518;"></i> Top Grossing Movies</h2>
+        
+        <!-- Filter Bar -->
+        <form class="filter-bar" method="GET" action="/boxoffice">
+            <i class="fas fa-filter" style="color: #666; margin-right: 5px;"></i>
+            <select name="year">
+                <option value="">All Years</option>
+                {% for y in years %}
+                <option value="{{ y }}" {% if selected_year == y|string %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+            <select name="genre">
+                <option value="">All Genres</option>
+                {% for g in genre_options %}
+                <option value="{{ g.id }}" {% if selected_genre == g.id|string %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="lang">
+                <option value="">All Languages</option>
+                {% for l in lang_options %}
+                <option value="{{ l.code }}" {% if selected_lang == l.code %}selected{% endif %}>{{ l.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="filter-btn"><i class="fas fa-search" style="margin-right: 6px;"></i>Apply</button>
+            <a href="/boxoffice" class="filter-reset"><i class="fas fa-undo" style="margin-right: 5px;"></i>Reset</a>
+        </form>
+
+        {% if top_grossing %}
+        {% for movie in top_grossing %}
+        <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" class="bo-ranked">
+            <div class="bo-rank">#{{ loop.index }}</div>
+            {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+            {% endif %}
+            <div class="bo-meta">
+                <h4>{{ movie.title }}</h4>
+                <div class="bo-meta-row">
+                    <span class="bo-tag gold"><i class="fas fa-star" style="margin-right: 4px;"></i>{{ movie.rating }}</span>
+                    <span class="bo-tag green"><i class="fas fa-dollar-sign" style="margin-right: 3px;"></i>{{ movie.revenue_fmt }}</span>
+                    <span class="bo-tag blue">Budget: {{ movie.budget_fmt }}</span>
+                    {% if movie.profit > 0 %}
+                    <span class="bo-tag green"><i class="fas fa-arrow-up" style="margin-right: 3px;"></i>Profit: {{ movie.profit_fmt }}</span>
+                    {% else %}
+                    <span class="bo-tag red"><i class="fas fa-arrow-down" style="margin-right: 3px;"></i>Loss: {{ movie.profit_fmt }}</span>
+                    {% endif %}
+                </div>
+                <div class="bo-meta-row" style="margin-top: 4px;">
+                    <span class="bo-tag">{{ movie.genres }}</span>
+                    <span class="bo-tag">{{ movie.release_date }}</span>
+                    <span class="bo-tag">{{ movie.language }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div class="bo-empty">
+            <i class="fas fa-search"></i>
+            <p>No results found. Try different filters!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ════════ 2 & 3. NOW PLAYING + UPCOMING (side by side) ════════ -->
+    <div class="bo-dual">
+        <!-- Now Playing -->
+        <div class="bo-section" style="margin-bottom: 0;">
+            <h2 class="bo-title"><i class="fas fa-film" style="color: #ef5350;"></i> Now In Theaters</h2>
+            {% if now_playing %}
+            <div class="bo-scroll">
+                {% for movie in now_playing %}
+                <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" class="bo-card" style="text-decoration: none;">
+                    {% if movie.poster_url %}
+                    <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                    {% endif %}
+                    <h4>{{ movie.title }}</h4>
+                    <div class="bo-rating"><i class="fas fa-star"></i> {{ movie.rating }}</div>
+                    <div style="font-size: 0.73rem; color: #aaa; margin-top: 3px;">{{ movie.release_date }}</div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bo-empty"><i class="fas fa-film"></i><p>No movies currently in theaters.</p></div>
+            {% endif %}
+        </div>
+
+        <!-- Upcoming -->
+        <div class="bo-section" style="margin-bottom: 0;">
+            <h2 class="bo-title"><i class="fas fa-calendar-alt" style="color: #42a5f5;"></i> Upcoming Releases</h2>
+            {% if upcoming %}
+            <div class="bo-scroll">
+                {% for movie in upcoming %}
+                <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" class="bo-card" style="text-decoration: none;">
+                    {% if movie.poster_url %}
+                    <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                    {% endif %}
+                    <h4>{{ movie.title }}</h4>
+                    <div class="bo-rating"><i class="fas fa-star"></i> {{ movie.rating }}</div>
+                    <div style="font-size: 0.73rem; color: #42a5f5; margin-top: 3px;">{{ movie.release_date }}</div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bo-empty"><i class="fas fa-calendar-alt"></i><p>No upcoming releases found.</p></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ════════ 4. POPULAR & SUCCESSFUL (full width scroll) ════════ -->
+    <div class="bo-section">
+        <h2 class="bo-title"><i class="fas fa-fire" style="color: #ff6b35;"></i> Popular & Successful</h2>
+        <p style="color: #666; font-size: 0.82rem; margin: -15px 0 20px 16px;">Blockbusters loved by critics and audiences worldwide</p>
+        {% if popular %}
+        <div class="bo-scroll">
+            {% for movie in popular %}
+            <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" class="bo-card" style="text-decoration: none;">
+                {% if movie.poster_url %}
+                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                {% endif %}
+                <h4>{{ movie.title }}</h4>
+                <div class="bo-rating"><i class="fas fa-star"></i> {{ movie.rating }}</div>
+                <div style="font-size: 0.73rem; color: #69f0ae; margin-top: 3px;">{{ movie.revenue_fmt }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bo-empty"><i class="fas fa-trophy"></i><p>Loading popular hits...</p></div>
+        {% endif %}
+    </div>
+
+    <!-- ════════ 5. HIDDEN GEMS (full width scroll) ════════ -->
+    <div class="bo-section">
+        <h2 class="bo-title"><i class="fas fa-gem" style="color: #ba68c8;"></i> Hidden Gems</h2>
+        <p style="color: #666; font-size: 0.82rem; margin: -15px 0 20px 16px;">Highly rated movies you probably haven't seen yet</p>
+        {% if gems %}
+        <div class="bo-scroll">
+            {% for movie in gems %}
+            <a href="{{ url_for('main.movie_detail', movie_id=movie.id) }}" class="bo-card" style="text-decoration: none;">
+                {% if movie.poster_url %}
+                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                {% endif %}
+                <h4>{{ movie.title }}</h4>
+                <div class="bo-rating"><i class="fas fa-star"></i> {{ movie.rating }}</div>
+                <div style="font-size: 0.73rem; color: #ba68c8; margin-top: 3px;">{{ movie.gem_label if movie.gem_label else ('ROI: ' ~ movie.roi ~ '%') }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bo-empty"><i class="fas fa-gem"></i><p>Discovering hidden gems...</p></div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
